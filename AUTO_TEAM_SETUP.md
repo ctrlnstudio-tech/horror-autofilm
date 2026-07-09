@@ -99,3 +99,32 @@ python3 auto_worker.py --schedule --upload
 ```
 
 ค่าเริ่มต้นคือสร้างคลิป `short` รอบละ 1 คลิป วันละ 3 รอบ เวลา `06:00`, `11:00`, `18:00` ตามเวลาไทย แล้วอัปโหลด YouTube เป็น `public` พร้อมระบุว่าเป็น AI video
+
+## ใช้ GitHub Actions แบบไม่ต้องใส่บัตร
+
+ถ้าไม่อยากใช้ Render paid worker ให้ใช้ GitHub Actions แทน ไฟล์ตั้งเวลาอยู่ที่ `.github/workflows/auto-youtube.yml`
+
+GitHub Actions จะรันวันละ 3 รอบตามเวลาไทย:
+
+- `06:00`
+- `11:00`
+- `18:00`
+
+และยังมีปุ่ม `Run workflow` ให้กดทดสอบเองได้
+
+### ตั้งค่า Secrets ใน GitHub
+
+ไปที่ GitHub repo > `Settings` > `Secrets and variables` > `Actions` > `New repository secret`
+
+เพิ่ม 2 ค่า:
+
+- `YOUTUBE_CLIENT_SECRETS_JSON` = เนื้อหาใน `client_secrets.json`
+- `YOUTUBE_TOKEN_JSON` = เนื้อหาใน `youtube_token.json`
+
+workflow จะรันคำสั่งนี้ทุกครั้ง:
+
+```bash
+python3 auto_worker.py --once --upload
+```
+
+แปลว่ารอบละ 1 คลิปใหม่ ไม่ใช้วิดีโอเดิมซ้ำ
