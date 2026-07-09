@@ -1,1 +1,1 @@
-run at 2026-07-09 21:58 Asia/Bangkok
+run at 2026-07-09 22:22 Asia/Bangkok after story coherence and narrator voice fix
