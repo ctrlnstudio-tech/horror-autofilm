@@ -7,6 +7,10 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import server
+import cloud_tuning
+
+
+cloud_tuning.install(server)
 
 
 ROOT = Path(__file__).resolve().parent
