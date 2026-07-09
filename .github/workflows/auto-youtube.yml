@@ -2,6 +2,11 @@ name: Auto Horror YouTube Upload
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/run-now.txt
   schedule:
     # GitHub cron uses UTC. These equal 06:05, 11:05, 18:05 in Asia/Bangkok.
     - cron: "5 23 * * *"
