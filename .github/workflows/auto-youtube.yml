@@ -3,8 +3,10 @@ name: Auto Horror YouTube Upload
 on:
   workflow_dispatch:
   schedule:
-    # GitHub cron uses UTC. These equal 06:00, 11:00, 18:00 in Asia/Bangkok.
-    - cron: "0 23,4,11 * * *"
+    # GitHub cron uses UTC. These equal 06:05, 11:05, 18:05 in Asia/Bangkok.
+    - cron: "5 23 * * *"
+    - cron: "5 4 * * *"
+    - cron: "5 11 * * *"
 
 jobs:
   create-and-upload:
