@@ -1,1 +1,1 @@
-run at 2026-07-09 22:44 Asia/Bangkok after curated scenario and female-only narration fix
+run at 2026-07-10 06:56 Asia/Bangkok after schedule reliability fix
