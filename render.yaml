@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: horror-autofilm-web
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 server.py
+    autoDeploy: true
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: YOUTUBE_CLIENT_SECRETS_JSON
+        sync: false
+      - key: YOUTUBE_TOKEN_JSON
+        sync: false
+
+  - type: worker
+    name: horror-autofilm-worker
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 auto_worker.py --schedule --upload
+    autoDeploy: true
+    envVars:
+      - key: YOUTUBE_CLIENT_SECRETS_JSON
+        sync: false
+      - key: YOUTUBE_TOKEN_JSON
+        sync: false

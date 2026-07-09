@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Horror AutoFilm</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="topbar">
+        <div>
+          <p class="kicker">Horror AutoFilm</p>
+          <h1>สร้างเรื่องผีอัตโนมัติ</h1>
+        </div>
+        <div class="run-state" id="runState">พร้อมสร้าง</div>
+      </header>
+
+      <section class="workspace">
+        <aside class="control-panel">
+          <div class="mode-group" aria-label="เลือกความยาว">
+            <button class="mode active" data-mode="short">
+              <span>HORROR SHORT</span>
+              <small>1-2 นาที</small>
+            </button>
+            <button class="mode" data-mode="long">
+              <span>HORROR LONG</span>
+              <small>6 นาที+</small>
+            </button>
+          </div>
+
+          <label class="brief-field">
+            <span>ไอเดียเพิ่มเติม (ไม่ใส่ก็สุ่มได้)</span>
+            <textarea id="brief" rows="7" placeholder="เช่น อย่าเปิด...คลินิกเก่า / เรื่องผีโรงแรม / ตัวละครเป็นพนักงานกะดึก"></textarea>
+          </label>
+
+          <div class="button-row">
+            <button id="generateVideo" class="primary">สร้างวิดีโอผีเลย</button>
+            <button id="randomize" class="secondary">ดูสคริปต์สุ่ม</button>
+          </div>
+
+          <div class="render-box" id="renderBox">
+            <div class="progress-line">
+              <span id="renderText">รอเริ่มเรนเดอร์</span>
+              <strong id="renderPercent">0%</strong>
+            </div>
+            <div class="progress-track">
+              <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div class="video-actions">
+              <a id="videoLink" class="video-link" href="#" target="_blank" rel="noreferrer">เปิดวิดีโอที่สร้างแล้ว</a>
+              <a id="downloadLink" class="download-link" href="#" download>ดาวน์โหลดวิดีโอ</a>
+              <div id="videoList" class="video-list"></div>
+            </div>
+          </div>
+        </aside>
+
+        <section class="result-panel">
+          <div class="story-head">
+            <div>
+              <p class="label">ชื่อเรื่อง</p>
+              <h2 id="storyTitle">ยังไม่ได้สร้างเรื่อง</h2>
+            </div>
+            <div class="meta">
+              <span id="storyDuration">-</span>
+              <span id="sceneCount">-</span>
+            </div>
+          </div>
+
+          <nav class="view-tabs" aria-label="เลือกมุมมอง">
+            <button class="view active" data-view="script">สคริปต์เสียงพูด</button>
+            <button class="view" data-view="scenes">ฉากละเอียด</button>
+            <button class="view" data-view="visuals">พรอมป์ภาพ</button>
+          </nav>
+
+          <div id="scriptView" class="view-panel active">
+            <div id="scriptOutput" class="script-output">กดสร้างวิดีโอผีเลยเพื่อสุ่มเรื่อง สร้างภาพ เสียง และตัดต่อให้อัตโนมัติ</div>
+          </div>
+
+          <div id="scenesView" class="view-panel">
+            <div id="sceneList" class="scene-list"></div>
+          </div>
+
+          <div id="visualsView" class="view-panel">
+            <div id="visualList" class="scene-list"></div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

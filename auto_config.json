@@ -1,0 +1,28 @@
+{
+  "mode": "short",
+  "count": 1,
+  "brief": "",
+  "uploadToYouTube": true,
+  "schedule": {
+    "timezone": "Asia/Bangkok",
+    "times": [
+      "06:00",
+      "11:00",
+      "18:00"
+    ]
+  },
+  "youtube": {
+    "privacyStatus": "public",
+    "containsSyntheticMedia": true,
+    "categoryId": "24",
+    "tags": [
+      "ผี",
+      "หลอน",
+      "เรื่องเล่า",
+      "เรื่องผี",
+      "ghost",
+      "horror"
+    ],
+    "descriptionFooter": "\n\n#ผี #หลอน #เรื่องเล่า #เรื่องผี #ghost #horror\n\nสร้างและตัดต่อด้วย Horror AutoFilm"
+  }
+}
