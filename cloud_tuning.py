@@ -294,7 +294,8 @@ def install_visual_tuning(server):
         "นาฬิกาทุกเรือนหยุดพร้อมกันที่เวลาตายของใครบางคน": "many old clocks stopped at the same time, no readable numbers",
         "เสียงประกาศเรียกชื่อคนที่ยังไม่เข้ามาในอาคาร": "an old ceiling speaker in an empty corridor, no visible text",
     })
-    server.ai_image_prompt = lambda scene, story, size: tuned_ai_image_prompt(server, scene, story, size)
+    # Keep the original image prompt style. The mapping updates above only help
+    # existing prompts translate the story objects/roles more clearly.
 
 
 def scene_image_directives(server, scene, story):
