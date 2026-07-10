@@ -12,6 +12,7 @@ import random
 import re
 import shutil
 import subprocess
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -38,6 +39,17 @@ FONT_FALLBACKS = [
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 ]
 VOICE = "Kanya (Enhanced)"
+THAI_NAMES = [
+    "นนท์", "ตั้ม", "วิน", "บาส", "ก้อง", "พีท", "อาร์ม", "เต้", "มอส", "เคน",
+    "มายด์", "ฝน", "แพร", "นุ่น", "เมย์", "แนน", "ขวัญ", "ฟ้า", "พลอย", "จูน",
+    "เอม", "ดา", "มิ้น", "น้ำ", "แป้ง", "เบลล์", "ป่าน", "ออย", "กิ๊ฟ", "รุ้ง",
+]
+
+
+def replace_hero_word(text, name):
+    if not isinstance(text, str):
+        return text
+    return text.replace("ตัวเอก", name)
 
 PLACES = [
     ("คลังของหายใต้ทางด่วน", "old warehouse of lost belongings under a Thai expressway"),
@@ -417,6 +429,64 @@ EVENT_VISUALS = {
     "โทรศัพท์โทรเข้ามาจากเบอร์ของสถานที่เดียวกัน": "a mobile phone ringing inside the forbidden place, screen glow but no readable text",
 }
 
+ROLE_VISUALS.update({
+    "เจ้าหน้าที่รับฝากของ": "one adult Thai lost-and-found clerk with a small tag book",
+    "ช่างไฟฉุกเฉิน": "one adult Thai emergency electrician holding a flashlight",
+    "คนล้างฟิล์ม": "one adult Thai photo lab worker in a darkroom apron",
+    "พนักงานโรงรับจำนำ": "one adult Thai pawnshop clerk behind an old counter",
+    "คนคุมห้องเครื่อง": "one adult Thai machine room operator with a flashlight",
+    "คนเก็บค่าเช่า": "one adult Thai rent collector holding a receipt book",
+    "พนักงานร้านสะดวกซื้อ": "one adult Thai convenience store clerk in a simple uniform",
+    "เจ้าของร้านซ่อมนาฬิกา": "one adult Thai watch repair shop owner with a loupe",
+    "คนจัดชั้นเอกสาร": "one adult Thai archive worker carrying dusty folders",
+    "ช่างแอร์": "one adult Thai air conditioner technician with a tool bag",
+    "พนักงานล้างรถ": "one adult Thai car wash worker holding a wet cloth",
+    "คนเฝ้าลานจอดรถ": "one adult Thai parking lot attendant with a small flashlight",
+    "พนักงานเคาน์เตอร์โรงแรม": "one adult Thai hotel counter clerk with an old key",
+    "ช่างทำกุญแจ": "one adult Thai locksmith holding a ring of blank keys",
+    "คนส่งเวชภัณฑ์": "one adult Thai medical supply courier carrying a sealed box",
+    "เจ้าหน้าที่ธุรการ": "one adult Thai office clerk holding a document folder",
+})
+
+OBJECT_VISUALS.update({
+    "ม้วนฟิล์มที่ถ่ายรูปหลังจากเจ้าของตายแล้ว": "an old camera film roll in a metal canister, dusty and ominous",
+    "นาฬิกาข้อมือที่เดินถอยหลัง": "an old wristwatch with its hands pointing backward, no readable numbers",
+    "เสื้อกันฝนที่เปียกตลอดเวลา": "a wet yellow raincoat hanging by itself and dripping water",
+    "ตลับเทปเสียงที่อัดเสียงคนหลับ": "a small old cassette tape beside a dusty recorder",
+    "ใบเสร็จที่ออกวันที่พรุ่งนี้": "a blank old receipt slip from a cash register, no readable writing",
+    "ตุ๊กตาไม้ที่หันหน้าเองได้": "a small carved wooden doll turned slightly toward camera",
+    "กุญแจห้องที่ไม่มีอยู่ในแปลนอาคาร": "an old room key with a blank tag and no readable number",
+    "ซองจดหมายที่ไม่มีชื่อผู้ส่ง": "a sealed old envelope with no readable address",
+    "ไฟฉายที่ส่องเห็นคนละทางกับสายตา": "an old flashlight casting light in an impossible direction",
+    "กล่องรับฝากที่มีเสียงหายใจอยู่ข้างใน": "a locked deposit box with small breathing holes",
+    "ผ้าคลุมกระจกที่มีรอยมือเปียก": "a cloth covering a mirror with wet handprints",
+    "บัตรพนักงานของคนที่หายตัวไป": "an old employee ID card turned away, no readable text",
+})
+
+GHOST_VISUALS.update({
+    "ร่างผู้ใหญ่ตัวเล็กผิดรูปที่เดินถอยหลังในเงามืด": "a small adult-shaped distorted shadow walking backward in darkness",
+    "หญิงชราที่นับเลขซ้ำอยู่หลังประตู": "an elderly female apparition half hidden behind a door",
+    "เงาคนใส่เสื้อกันฝนยืนเปียกทั้งที่ไม่มีฝน": "a raincoat-wearing shadow dripping water indoors",
+    "คนไม่มีหน้าในชุดพนักงานเก่า": "a faceless old employee silhouette in a faded uniform",
+    "เสียงแม่ที่เรียกชื่อคนผิดซ้ำๆ": "a mother-shaped shadow at the edge of a dark room",
+    "ชายในรูปถ่ายที่ค่อยๆ หันหน้ามามอง": "a man in an old photograph slowly turning toward camera",
+    "ผู้หญิงที่เห็นแค่ครึ่งตัวตรงบานกระจก": "a half-visible female apparition reflected in dirty glass",
+    "เงาดำที่เดินตามไฟฉายแต่ไม่แตะพื้น": "a black shadow following a flashlight beam without touching the floor",
+    "คนไข้เก่าที่ถามหาห้องของตัวเองทุกคืน": "an old patient apparition in a faded hospital gown",
+})
+
+EVENT_VISUALS.update({
+    "ไฟฉายส่องไปทางหนึ่ง แต่เงาของตัวเอกหันไปอีกทาง": "a flashlight beam pointing one way while the person's shadow faces another direction",
+    "เสียงประกาศเรียกชื่อคนที่ยังไม่เข้ามาในอาคาร": "an old ceiling speaker in an empty corridor, no visible text",
+    "กล่องรับฝากสั่นเหมือนมีคนเคาะจากข้างใน": "a locked deposit box trembling as if knocked from inside",
+    "กลิ่นธูปแรงขึ้นทุกครั้งที่เดินเข้าใกล้ของชิ้นนั้น": "thick incense smoke curling around the forbidden object",
+    "พื้นเปียกเป็นรอยเท้าเดินสวนทางกับตัวเอก": "wet footprints crossing against the living person's path",
+    "เสียงลิ้นชักเปิดปิดเองตามจังหวะหายใจ": "old drawers opening by themselves in a dusty room",
+    "นาฬิกาทุกเรือนหยุดพร้อมกันที่เวลาตายของใครบางคน": "many old clocks stopped at the same time, no readable numbers",
+    "กระจกสะท้อนห้องเดิมแต่ไม่มีตัวเอกอยู่ในนั้น": "a dirty mirror reflecting the same room without the living person",
+    "วิทยุเก่าพูดประโยคเดียวกับที่ตัวเอกกำลังคิด": "an old radio glowing faintly on a dusty table",
+})
+
 
 def run(command):
     result = subprocess.run(command, cwd=str(ROOT), capture_output=True, text=True)
@@ -539,6 +609,76 @@ def fill_story_template(template, seed):
     return template.format(**story_context(seed))
 
 
+def strip_forbidden_title_prefix(text):
+    text = re.sub(r"^\s*อย่า\s*เปิด\s*[.ๆ…:：\-–—]*\s*", "", text.strip())
+    text = re.sub(r"\s+", " ", text)
+    return text.strip(" .ๆ…:：-–—")
+
+
+def compact_place_title(place_title):
+    known_places = [item[0] for item in PLACES] + [item[0] for item in PLACE_ROOTS]
+    for name in sorted(known_places, key=len, reverse=True):
+        if place_title.startswith(name) or name in place_title:
+            return name
+    return place_title[:18].rstrip("ในข้างหลังใต้บนริม")
+
+
+def compact_object_title(object_name):
+    for key in ["เทปวิดีโอ", "กล่องยา", "ม้วนฟิล์ม", "นาฬิกา", "เสื้อกันฝน", "ตลับเทป", "ตุ๊กตาไม้", "กุญแจห้อง", "กุญแจ", "ซองจดหมาย", "ไฟฉาย", "กล่องรับฝาก", "ผ้าคลุมกระจก", "บัตรพนักงาน", "แฟ้มคดี", "สมุดลงชื่อ", "รูปถ่าย", "พวงกุญแจ", "บัตรคิว", "ใบเสร็จ"]:
+        if key in object_name:
+            return key
+    return object_name[:14]
+
+
+def make_story_title(place_title, object_name, event, pattern_name, brief=""):
+    cleaned = strip_forbidden_title_prefix(brief)
+    if cleaned and len(cleaned) >= 4:
+        return cleaned[:42]
+
+    place_title = compact_place_title(place_title)
+    object_name = compact_object_title(object_name)
+    choices = {
+        "ของต้องห้ามเลือกเจ้าของ": [
+            f"{object_name}ต้องห้าม",
+            f"ของคืนเดียวจาก{place_title}",
+            f"เจ้าของคนสุดท้ายของ{object_name}",
+        ],
+        "กล้องเห็นสิ่งที่ยังไม่เกิด": [
+            f"ภาพสุดท้ายจาก{place_title}",
+            f"กล้องคืนตายที่{place_title}",
+            "ภาพที่ยังไม่เกิด",
+        ],
+        "คนที่โทรมาจากสถานที่ปิดตาย": [
+            f"สายสุดท้ายจาก{place_title}",
+            f"เบอร์ที่โทรจาก{place_title}",
+            f"เสียงเรียกใน{place_title}",
+        ],
+        "ห้องที่ไม่มีอยู่ในแปลน": [
+            f"ชั้นที่หายไปใน{place_title}",
+            f"ห้องลับหลัง{place_title}",
+            f"ทางออกที่ไม่มีในแปลน",
+        ],
+        "ความผิดที่สถานที่จำได้": [
+            f"แฟ้มสุดท้ายของ{place_title}",
+            f"ชื่อถัดไปใน{place_title}",
+            f"คืนที่{place_title}จำได้",
+        ],
+        "พิธีเก่าที่ถูกเปิดซ้ำ": [
+            f"พิธีคืนกลับที่{place_title}",
+            f"รอยมือบน{object_name}",
+            f"คืนส่งคนแทนที่{place_title}",
+        ],
+    }
+    pool = choices.get(pattern_name) or [
+        f"คืนสุดท้ายที่{place_title}",
+        f"เสียงจาก{place_title}",
+        f"เงาใน{place_title}",
+    ]
+    title = random.choice(pool)
+    title = strip_forbidden_title_prefix(title)
+    return title[:42]
+
+
 def make_seed(brief, avoid=None):
     avoid = avoid or {}
     cleaned = brief.strip()
@@ -551,7 +691,7 @@ def make_seed(brief, avoid=None):
         event = random.choice(EVENTS)
         twist = random.choice(TWISTS)
         pattern = random.choice(STORY_PATTERNS)
-        title = cleaned[:44] if cleaned.startswith("อย่าเปิด") else f"อย่าเปิด...{place[0]}"
+        title = make_story_title(place[0], object_name, event, pattern["name"], cleaned)
         if (
             title not in avoid.get("titles", set())
             and place[0] not in avoid.get("places", set())
@@ -566,14 +706,16 @@ def make_seed(brief, avoid=None):
         event = random.choice(EVENTS)
         twist = random.choice(TWISTS)
         pattern = random.choice(STORY_PATTERNS)
-        title = cleaned[:44] if cleaned.startswith("อย่าเปิด") else f"อย่าเปิด...{place[0]}"
+        title = make_story_title(place[0], object_name, event, pattern["name"], cleaned)
 
-    if cleaned.startswith("อย่าเปิด"):
-        title = cleaned[:44]
-    else:
-        title = f"อย่าเปิด...{place[0]}"
+    title = make_story_title(place[0], object_name, event, pattern["name"], cleaned)
+    name = random.choice(THAI_NAMES)
+    ghost = replace_hero_word(ghost, name)
+    event = replace_hero_word(event, name)
+    twist = replace_hero_word(twist, name)
     return {
         "title": title,
+        "name": name,
         "place": place,
         "protagonist": protagonist,
         "object": object_name,
@@ -590,16 +732,133 @@ def make_seed(brief, avoid=None):
     }
 
 
-def story_lines(seed, mode):
-    pattern = seed["pattern"]
-    base = [fill_story_template(template, seed) for template in pattern["beats"]]
-    if mode == "short":
-        return base
+def align_seed_to_pattern(seed):
+    name = seed["pattern"]["name"]
 
-    middle = [fill_story_template(template, seed) for template in pattern["middles"]]
-    selected_middle = random.sample(middle, k=min(8, len(middle)))
-    lines = [base[0], base[1], base[2], base[3], *selected_middle, base[4], base[5], base[6], base[7], base[8], base[9]]
-    return [expand_long_line(line, seed, index, len(lines)) for index, line in enumerate(lines, start=1)]
+    pools = {
+        "ของต้องห้ามเลือกเจ้าของ": {
+            "object": OBJECTS,
+            "ghost": ["ผู้หญิงผมเปียกที่พูดด้วยเสียงของคนรู้จัก", "ชายแก่ที่เห็นได้เฉพาะในกระจก", "เงาคนเฝ้าศพที่เดินตามเสียงกุญแจ", "คนไม่มีหน้าในชุดพนักงานเก่า", "หญิงชราที่นับเลขซ้ำอยู่หลังประตู"],
+            "event": ["กล่องรับฝากสั่นเหมือนมีคนเคาะจากข้างใน", "กลิ่นธูปแรงขึ้นทุกครั้งที่เดินเข้าใกล้ของชิ้นนั้น", "ไฟฉายส่องไปทางหนึ่ง แต่เงาของตัวเอกหันไปอีกทาง", "เสียงเคาะดังมาจากผนังแทนที่จะดังจากประตู"],
+            "twist": ["ของต้องห้ามไม่ได้ถูกเก็บไว้เพื่อกันคนเข้า แต่เพื่อกันบางอย่างไม่ให้ออกมา", "ของที่คิดว่าเก็บมาได้ ความจริงเป็นของที่ตัวเอกเคยเอาไปทิ้งเองเมื่อหลายปีก่อน", "ทุกคนที่บอกว่าไม่รู้เรื่อง ความจริงเคยรอดออกมาได้ด้วยการส่งคนใหม่เข้าไปแทน"],
+            "sensory": ["กลิ่นธูปเก่าปนกลิ่นน้ำขัง", "ลมเย็นที่พัดออกมาจากห้องปิด", "เสียงรองเท้าลากช้าๆ หลังผนัง"],
+            "clue": ["รอยนิ้วมือเปียกบนฝุ่นแห้ง", "รูปถ่ายที่มีเงาเพิ่มขึ้นหนึ่งคน", "ชื่อคนตายในสมุดลงเวลา"],
+        },
+        "กล้องเห็นสิ่งที่ยังไม่เกิด": {
+            "object": ["รูปถ่ายที่มีเงาเพิ่มขึ้นทุกครั้ง", "ม้วนฟิล์มที่ถ่ายรูปหลังจากเจ้าของตายแล้ว", "บัตรพนักงานของคนที่หายตัวไป", "ไฟฉายที่ส่องเห็นคนละทางกับสายตา", "แฟ้มคดีที่หน้าสุดท้ายหายไป"],
+            "ghost": ["ชายในรูปถ่ายที่ค่อยๆ หันหน้ามามอง", "เสียงผู้ชายที่อยู่ในลำโพงแต่ไม่มีตัว", "ผู้หญิงที่เห็นแค่ครึ่งตัวตรงบานกระจก", "คนไม่มีหน้าในชุดพนักงานเก่า", "เงาดำที่เดินตามไฟฉายแต่ไม่แตะพื้น"],
+            "event": ["กล้องวงจรปิดย้อนหลังไปเห็นเหตุการณ์ที่ยังไม่เกิด", "ไฟฉายส่องไปทางหนึ่ง แต่เงาของตัวเอกหันไปอีกทาง", "กระจกสะท้อนห้องเดิมแต่ไม่มีตัวเอกอยู่ในนั้น", "นาฬิกาทุกเรือนหยุดพร้อมกันที่เวลาตายของใครบางคน", "เสียงประกาศเรียกชื่อคนที่ยังไม่เข้ามาในอาคาร"],
+            "twist": ["ภาพสุดท้ายจากกล้องไม่ได้ถ่ายอดีตหรืออนาคต แต่มันถ่ายช่วงเวลาหลังจากตัวเอกตายไปแล้ว", "ภาพวงจรปิดเผยว่าตัวเอกเดินเข้าไปคนเดียว แต่ตอนออกมามีใครบางคนเดินตามหลัง", "เสียงที่คอยเตือนมาตลอดคือเสียงของตัวเอกจากคืนสุดท้าย"],
+            "sensory": ["เสียงวิทยุแตกพร่าที่ไม่มีใครเปิด", "เสียงน้ำหยดเหมือนมีใครนับเวลา", "ลมเย็นที่พัดออกมาจากห้องปิด"],
+            "clue": ["รอยเท้าที่หยุดตรงหน้ากล้อง", "รูปถ่ายที่มีเงาเพิ่มขึ้นหนึ่งคน", "ใบเสร็จที่พิมพ์เวลาหลังจากเหตุการณ์จบ"],
+        },
+        "คนที่โทรมาจากสถานที่ปิดตาย": {
+            "object": ["ตลับเทปเสียงที่อัดเสียงคนหลับ", "ซองจดหมายที่ไม่มีชื่อผู้ส่ง", "บัตรพนักงานของคนที่หายตัวไป", "พวงกุญแจที่มีกลิ่นธูปติดอยู่", "ไฟฉายที่ส่องเห็นคนละทางกับสายตา"],
+            "ghost": ["เสียงผู้ชายที่อยู่ในลำโพงแต่ไม่มีตัว", "เสียงแม่ที่เรียกชื่อคนผิดซ้ำๆ", "ผู้หญิงผมเปียกที่พูดด้วยเสียงของคนรู้จัก", "เงาคนใส่เสื้อกันฝนยืนเปียกทั้งที่ไม่มีฝน"],
+            "event": ["โทรศัพท์โทรเข้ามาจากเบอร์ของสถานที่เดียวกัน", "เสียงประกาศเรียกชื่อคนที่ยังไม่เข้ามาในอาคาร", "วิทยุเก่าพูดประโยคเดียวกับที่ตัวเอกกำลังคิด", "ประตูล็อกจากด้านใน ทั้งที่ไม่มีใครอยู่ในห้อง"],
+            "twist": ["คนที่โทรมาขอความช่วยเหลือไม่เคยมีตัวตนในทะเบียนคนเป็น", "เสียงที่คอยเตือนมาตลอดคือเสียงของตัวเอกจากคืนสุดท้าย", "สุดท้ายพบว่าสถานที่นั้นปิดตายมาตั้งแต่ก่อนวันที่ตัวเอกจำได้"],
+            "sensory": ["เสียงวิทยุแตกพร่าที่ไม่มีใครเปิด", "ลมเย็นที่พัดออกมาจากห้องปิด", "เสียงรองเท้าลากช้าๆ หลังผนัง"],
+            "clue": ["ชื่อคนตายในสมุดลงเวลา", "รอยนิ้วมือเปียกบนฝุ่นแห้ง", "ใบเสร็จที่พิมพ์เวลาหลังจากเหตุการณ์จบ"],
+        },
+        "ห้องที่ไม่มีอยู่ในแปลน": {
+            "object": ["กุญแจห้องที่ไม่มีอยู่ในแปลนอาคาร", "กุญแจที่ไม่มีหมายเลข", "ผ้าคลุมกระจกที่มีรอยมือเปียก", "สมุดลงชื่อที่มีชื่อคนตาย"],
+            "ghost": ["ชายแก่ที่เห็นได้เฉพาะในกระจก", "หญิงชราที่นับเลขซ้ำอยู่หลังประตู", "คนไม่มีหน้าในชุดพนักงานเก่า", "ผู้หญิงที่เห็นแค่ครึ่งตัวตรงบานกระจก"],
+            "event": ["ลิฟต์ขึ้นไปชั้นที่ไม่มีอยู่จริง", "ประตูล็อกจากด้านใน ทั้งที่ไม่มีใครอยู่ในห้อง", "เลขห้องที่ถูกขูดทิ้งจากแผนผัง", "กระจกสะท้อนห้องเดิมแต่ไม่มีตัวเอกอยู่ในนั้น"],
+            "twist": ["สุดท้ายพบว่าสถานที่นั้นปิดตายมาตั้งแต่ก่อนวันที่ตัวเอกจำได้", "ประตูที่ห้ามเปิดไม่ได้พาเข้าไปเจอผี แต่มันพาออกไปยังคืนที่ไม่มีใครควรรอดกลับมา", "ชื่อผู้แจ้งเหตุคนแรกคือชื่อเดียวกับตัวเอก"],
+            "sensory": ["ลมเย็นที่พัดออกมาจากห้องปิด", "เสียงน้ำหยดเหมือนมีใครนับเวลา", "เสียงรองเท้าลากช้าๆ หลังผนัง"],
+            "clue": ["เลขห้องที่ถูกขูดทิ้งจากแผนผัง", "รอยนิ้วมือเปียกบนฝุ่นแห้ง", "ชื่อคนตายในสมุดลงเวลา"],
+        },
+        "ความผิดที่สถานที่จำได้": {
+            "object": ["แฟ้มคดีที่หน้าสุดท้ายหายไป", "สมุดลงชื่อที่มีชื่อคนตาย", "รูปถ่ายที่มีเงาเพิ่มขึ้นทุกครั้ง", "ซองจดหมายที่ไม่มีชื่อผู้ส่ง", "บัตรพนักงานของคนที่หายตัวไป"],
+            "ghost": ["ชายในรูปถ่ายที่ค่อยๆ หันหน้ามามอง", "เสียงแม่ที่เรียกชื่อคนผิดซ้ำๆ", "คนไม่มีหน้าในชุดพนักงานเก่า", "หญิงชราที่นับเลขซ้ำอยู่หลังประตู"],
+            "event": ["ชื่อของตัวเอกไปปรากฏในสมุดลงชื่อเมื่อสิบปีก่อน", "เสียงลิ้นชักเปิดปิดเองตามจังหวะหายใจ", "ไฟทั้งชั้นดับพร้อมกัน แต่มีห้องเดียวที่ยังสว่าง", "กล้องวงจรปิดย้อนหลังไปเห็นเหตุการณ์ที่ยังไม่เกิด"],
+            "twist": ["สถานที่นั้นไม่ได้หลอกคนแปลกหน้า แต่มันเลือกเฉพาะคนที่เคยลืมความผิดของตัวเอง", "พอทุกอย่างจบ ตัวเอกพบว่าตัวเองกลายเป็นชื่อถัดไปในแฟ้มคดี", "ของที่คิดว่าเก็บมาได้ ความจริงเป็นของที่ตัวเอกเคยเอาไปทิ้งเองเมื่อหลายปีก่อน"],
+            "sensory": ["เสียงน้ำหยดเหมือนมีใครนับเวลา", "กลิ่นธูปเก่าปนกลิ่นน้ำขัง", "เสียงรองเท้าลากช้าๆ หลังผนัง"],
+            "clue": ["ชื่อคนตายในสมุดลงเวลา", "ใบเสร็จที่พิมพ์เวลาหลังจากเหตุการณ์จบ", "รูปถ่ายที่มีเงาเพิ่มขึ้นหนึ่งคน"],
+        },
+        "พิธีเก่าที่ถูกเปิดซ้ำ": {
+            "object": ["ตุ๊กตาไม้ที่หันหน้าเองได้", "ผ้าคลุมกระจกที่มีรอยมือเปียก", "พวงกุญแจที่มีกลิ่นธูปติดอยู่", "ตลับเทปเสียงที่อัดเสียงคนหลับ", "นาฬิกาข้อมือที่เดินถอยหลัง"],
+            "ghost": ["หญิงใส่ชุดไทยที่หันหลังตลอดเวลา", "หญิงชราที่นับเลขซ้ำอยู่หลังประตู", "ร่างผู้ใหญ่ตัวเล็กผิดรูปที่เดินถอยหลังในเงามืด", "ผู้หญิงผมเปียกที่พูดด้วยเสียงของคนรู้จัก"],
+            "event": ["กลิ่นธูปแรงขึ้นทุกครั้งที่เดินเข้าใกล้ของชิ้นนั้น", "นาฬิกาทุกเรือนหยุดพร้อมกันที่เวลาตายของใครบางคน", "วิทยุเก่าพูดประโยคเดียวกับที่ตัวเอกกำลังคิด", "พื้นเปียกเป็นรอยเท้าเดินสวนทางกับตัวเอก"],
+            "twist": ["เสียงที่คอยเตือนมาตลอดคือเสียงของตัวเอกจากคืนสุดท้าย", "ทุกคนที่บอกว่าไม่รู้เรื่อง ความจริงเคยรอดออกมาได้ด้วยการส่งคนใหม่เข้าไปแทน", "ของต้องห้ามไม่ได้ถูกเก็บไว้เพื่อกันคนเข้า แต่เพื่อกันบางอย่างไม่ให้ออกมา"],
+            "sensory": ["กลิ่นธูปเก่าปนกลิ่นน้ำขัง", "เสียงน้ำหยดเหมือนมีใครนับเวลา", "ลมเย็นที่พัดออกมาจากห้องปิด"],
+            "clue": ["รอยนิ้วมือเปียกบนฝุ่นแห้ง", "รูปถ่ายที่มีเงาเพิ่มขึ้นหนึ่งคน", "ชื่อคนตายในสมุดลงเวลา"],
+        },
+    }
+
+    selected = pools.get(name, {})
+    for key, choices in selected.items():
+        if seed.get(key) not in choices:
+            seed[key] = random.choice(choices)
+
+
+def story_lines(seed, mode):
+    align_seed_to_pattern(seed)
+    name = seed.get("name") or "นนท์"
+    base = [replace_hero_word(fill_story_template(template, seed).strip(), name) for template in seed["pattern"]["beats"]]
+    middles = [replace_hero_word(fill_story_template(template, seed).strip(), name) for template in seed["pattern"].get("middles", [])]
+    lines = []
+    middle_groups = {
+        2: middles[0:2],
+        4: middles[2:4],
+        6: middles[4:6],
+        8: middles[6:8],
+    }
+    for index, line in enumerate(base, start=1):
+        lines.append(line)
+        lines.extend(middle_groups.get(index, []))
+    if mode == "short":
+        return lines
+    return [replace_hero_word(expand_long_line(line, seed, index, len(lines)), name) for index, line in enumerate(lines, start=1)]
+
+
+def coherent_story_lines(seed):
+    place = seed["place"][0]
+    protagonist = seed["protagonist"]
+    object_name = seed["object"]
+    ghost = seed["ghost"]
+    event = seed["event"]
+    twist = seed["twist"]
+    time_text = seed["time"]
+    witness = seed["witness"]
+    sensory = seed["sensory"]
+    clue = seed["clue"]
+    rule = seed["rule"]
+    final_image = seed["final_image"]
+
+    return [
+        f"ก่อนจะเล่าเรื่องนี้ ต้องบอกไว้ก่อนว่า {place} ไม่ใช่สถานที่ที่คนแถวนั้นอยากพูดถึงหลังฟ้ามืด เพราะทุกครั้งที่มีคนเอ่ยถึง มักจะมีใครบางคนได้ยินเสียงตอบกลับมาจากข้างใน ทั้งที่ที่นั่นควรถูกทิ้งร้างไปแล้ว",
+        f"{time_text} {protagonist} ต้องเข้าไปที่นั่นเพราะมีคนแจ้งว่าเจอ {object_name} วางอยู่ผิดที่ผิดทาง และถ้าไม่รีบเอาออกมา เช้าวันต่อมามันจะหายไปเหมือนไม่เคยมีใครเห็น",
+        f"ทันทีที่ก้าวเข้าไป สิ่งแรกที่ชัดที่สุดคือ {sensory} ความเงียบในนั้นไม่เหมือนสถานที่ว่างเปล่า แต่มันเหมือนมีคนหลายคนกำลังหยุดหายใจเพื่อฟังเสียงฝีเท้าของเขา",
+        f"เขาเจอ {object_name} อยู่ตรงจุดลึกสุดของ {place} ข้างๆ มี {clue} เหมือนใครตั้งใจทิ้งหลักฐานไว้ให้รู้ว่าเรื่องนี้เคยเกิดขึ้นมาก่อน และไม่ได้จบลงด้วยดี",
+        f"ตอนที่เขาจะหยิบของชิ้นนั้น {event} ทุกอย่างเกิดขึ้นพอดีจนเขาเริ่มเข้าใจว่า สิ่งที่ผิดปกติไม่ได้รอให้เขาเจอ แต่มันกำลังจัดฉากให้เขาเดินไปถึงจุดที่ต้องการ",
+        f"เขานึกถึงคำเตือนของ {witness} ที่เคยบอกไว้สั้นๆ ว่า {rule} ตอนแรกเขาคิดว่าเป็นแค่เรื่องเล่าคนแก่ แต่ตอนนี้คำเตือนนั้นดังอยู่ในหัวชัดกว่าทุกเสียงรอบตัว",
+        f"แล้ว {ghost} ก็เริ่มปรากฏอยู่ตรงขอบสายตา ไม่ได้พุ่งเข้ามา ไม่ได้กรีดร้อง มีแค่การยืนรอเงียบๆ เหมือนรู้ว่าอีกไม่นานเขาจะเป็นฝ่ายเดินกลับไปหาเอง",
+        f"เมื่อเขาพยายามออกจาก {place} ทางเดินทุกทางกลับพาเขาวนกลับมาหา {object_name} อีกครั้ง และทุกครั้งที่กลับมา ของชิ้นนั้นจะวางใกล้ตัวเขามากกว่าเดิม",
+        f"สุดท้าย {twist} ความจริงนั้นทำให้เขารู้ว่าเขาไม่ได้เผลอเข้ามาในเรื่องผีของคนอื่น แต่ชื่อของเขาถูกลากเข้ามาอยู่ในเรื่องนี้ตั้งแต่ก่อนคืนที่เขาเปิดประตูเข้าไปแล้ว",
+        f"หลังจากคืนนั้น ไม่มีใครเห็นเขาเล่าเรื่องนี้ต่อหน้าอีกเลย เหลือเพียง {final_image} ที่ยังปรากฏอยู่ใน {place} เป็นบางคืน เหมือนกำลังรอให้คนต่อไปเดินเข้าไปฟังตอนจบด้วยตัวเอง",
+    ]
+
+
+def coherent_middle_lines(seed):
+    place = seed["place"][0]
+    protagonist = seed["protagonist"]
+    object_name = seed["object"]
+    ghost = seed["ghost"]
+    clue = seed["clue"]
+    sensory = seed["sensory"]
+    rule = seed["rule"]
+
+    return [
+        f"{protagonist} พยายามโทรหาคนที่แจ้งเรื่องเข้ามา แต่ปลายสายมีเพียงเสียงลมหายใจเบาๆ และเสียงนั้นดังซ้อนกับเสียงหายใจที่มาจากมุมมืดใน {place}",
+        f"เขาเริ่มถ่ายรูปเก็บหลักฐาน แต่รูปแรกที่ได้กลับเห็น {object_name} อยู่ในมือของเขาแล้ว ทั้งที่ในโลกจริงมันยังวางอยู่ห่างออกไปหลายก้าว",
+        f"ยิ่งเดินลึกเข้าไป {sensory} ก็ยิ่งแรงขึ้นจนเหมือนมีใครเอาความทรงจำของสถานที่นั้นมาบีบไว้ตรงหน้าอก",
+        f"บนผนังใกล้ๆ มีร่องรอยใหม่ที่ดูคล้าย {clue} แต่เมื่อเอาไฟส่องใกล้ๆ ร่องรอยนั้นกลับยังเปียกเหมือนเพิ่งถูกทิ้งไว้ไม่กี่วินาที",
+        f"เสียงของ {ghost} ไม่ได้เรียกชื่อเขาตรงๆ แต่มันพูดประโยคที่มีแต่คนใกล้ตัวเขาเท่านั้นที่ควรรู้ ทำให้เขาเริ่มไม่แน่ใจว่าสิ่งที่ตามอยู่รู้จักเขามานานแค่ไหน",
+        f"เขาฝืนทำตรงข้ามกับคำเตือนที่ว่า {rule} และทันทีที่ฝืน ความมืดทั้งห้องก็เหมือนขยับเข้ามาใกล้พร้อมกัน",
+        f"ก่อนถึงทางออก เขาพบ {object_name} อีกครั้ง คราวนี้มันไม่ได้วางนิ่ง แต่มันเอียงเข้าหาเขาช้าๆ เหมือนถูกมือที่มองไม่เห็นผลักมาให้รับไว้",
+        f"สิ่งที่น่ากลัวที่สุดไม่ใช่การเห็นผี แต่คือการรู้ว่าทุกทางเลือกที่เขาคิดว่าตัวเองตัดสินใจเอง ถูกสถานที่นี้จัดไว้ล่วงหน้าหมดแล้ว",
+    ]
 
 
 def expand_long_line(line, seed, index, total):
@@ -631,7 +890,7 @@ def scene_visual_detail(seed, line, number):
 
     if number == 1:
         return f"opening shot of {place_en}, the forbidden place clearly visible, {object_visual} in the foreground, no people yet"
-    if "ถูกเรียก" in line or "เก็บ" in line:
+    if any(token in line for token in ("ถูกเรียก", "เข้าไปเอา", "เข้าไปที่นั่น", "ก้าวเข้า", "เดินเข้าไป")):
         return f"{role} entering {place_en} at night, reaching toward {object_visual}, tense but realistic"
     if "ประตูเปิด" in line or "ลมเย็น" in line:
         return f"a half-open door inside {place_en}, cold mist spilling out, {role} hesitating at the threshold"
@@ -660,10 +919,75 @@ def scene_visual_detail(seed, line, number):
     return f"{role} inside {place_en}, {object_visual} nearby, {ghost_visual} suggested in the shadows, realistic horror scene"
 
 
+def scene_image_directives(scene, story):
+    seed = story.get("seed", {})
+    place_en = seed.get("placeVisual", "old Thai haunted interior")
+    role = ROLE_VISUALS.get(seed.get("protagonist", ""), f"one adult Thai {seed.get('protagonist', 'person')}")
+    object_visual = OBJECT_VISUALS.get(seed.get("object", ""), seed.get("object", "forbidden object"))
+    ghost_visual = GHOST_VISUALS.get(seed.get("ghost", ""), seed.get("ghost", "subtle ghost presence"))
+    event_visual = EVENT_VISUALS.get(seed.get("event", ""), seed.get("event", "supernatural event"))
+    line = scene["narration"]
+    directives = [
+        f"exact location: {place_en}",
+        f"main forbidden object: {object_visual}",
+        "Thai horror realism, adult characters only",
+    ]
+
+    if scene["number"] == 1:
+        directives += [
+            "opening establishing shot of the exact location from the story",
+            "the forbidden object must be visible in the foreground",
+            "no living character in the foreground, no random extra people",
+        ]
+    elif "ถูกเรียก" in line or "เข้าไป" in line or "ก้าวเข้า" in line:
+        directives += [
+            f"show exactly one living person: {role}",
+            f"the person is entering or standing inside {place_en}",
+            f"{object_visual} must be visible but not replaced by another object",
+        ]
+    elif seed.get("event", "") in line or "ทุกอย่างเกิดขึ้น" in line:
+        directives += [
+            f"show the specific supernatural event: {event_visual}",
+            f"show exactly one living person: {role}",
+            "the person reacts to the event, not to an unrelated location",
+        ]
+    elif seed.get("ghost", "") in line or "ปรากฏ" in line or "เงา" in line:
+        directives += [
+            f"show exactly one living person: {role}",
+            f"show the ghost only as a subtle background figure: {ghost_visual}",
+            "do not add a second normal person, do not show a crowd",
+        ]
+    elif "ถาม" in line or "เตือน" in line or "บอก" in line or "ปลายสาย" in line:
+        directives += [
+            f"show exactly one living person: {role}",
+            "show a tense listening moment, phone/radio/doorway only if implied by the scene",
+            f"keep the background clearly inside {place_en}",
+        ]
+    elif "หลักฐาน" in line or "ชื่อ" in line or "สมุด" in line or "แฟ้ม" in line or "รูป" in line:
+        directives += [
+            f"show exactly one living person: {role}",
+            f"show evidence beside {object_visual}",
+            "any paper, book, label or screen must be blank or unreadable",
+        ]
+    elif "สุดท้าย" in line or "หลังจากคืนนั้น" in line or "เหลือเพียง" in line:
+        directives += [
+            "final aftermath shot of the exact location",
+            f"show {object_visual} or {ghost_visual} as the final haunting detail",
+            "no unrelated house, no unrelated room, no extra character",
+        ]
+    else:
+        directives += [
+            f"show exactly one living person: {role}",
+            f"keep {object_visual} visible in the scene",
+            f"ghost presence is subtle: {ghost_visual}",
+        ]
+    return ". ".join(directives)
+
+
 def make_story(mode, brief, avoid=None):
     seed = make_seed(brief, avoid=avoid)
     lines = story_lines(seed, mode)
-    target_seconds = 124 if mode == "short" else 420
+    target_seconds = 174 if mode == "short" else 420
     duration = max(6, round(target_seconds / len(lines)))
     scenes = []
     for index, line in enumerate(lines, start=1):
@@ -678,6 +1002,7 @@ def make_story(mode, brief, avoid=None):
         "mode": mode,
         "title": seed["title"],
         "seed": {
+            "name": seed.get("name", ""),
             "placeTitle": seed["place"][0],
             "placeVisual": seed["place"][1],
             "protagonist": seed["protagonist"],
@@ -899,16 +1224,19 @@ def draw_horror_background(path, scene, story, size):
 def ai_image_prompt(scene, story, size):
     width, height = size
     aspect = "vertical 9:16 composition, 1080x1920" if height > width else "wide horizontal 16:9 composition, 1920x1080"
-    narration = scene["narration"][:260]
+    seed = story.get("seed", {})
+    directives = scene_image_directives(scene, story)
     return " ".join([
         "Photorealistic Thai supernatural horror movie still.",
         aspect + ".",
-        "Looks like a real film frame, realistic adult Thai people, natural body proportions, cinematic lens, practical lighting, detailed location.",
-        f"Scene must show: {scene['visual']}.",
-        f"Story narration context: {narration}.",
-        "Mysterious, frightening, suspenseful, no gore.",
+        "Looks like a real film frame, realistic adult Thai people, natural body proportions, cinematic lens, practical lighting, detailed location, not AI art.",
+        f"Scene visual summary: {scene['visual']}.",
+        f"Strict scene directives: {directives}.",
+        f"Story title meaning: {story['title']}. Place: {seed.get('placeTitle', '')}. Event: {seed.get('event', '')}.",
+        "Mysterious, frightening, suspenseful, no gore, no jump scare face closeup unless the scene asks for it.",
         "All documents, labels, signs, screens, tickets and pages must be blank, turned away, or unreadably blurred.",
-        "No children, no extra unrelated people, no cartoon, no illustration, no anime, no text, no subtitles, no letters, no numbers, no watermark, no logo, no stretched faces, no deformed bodies.",
+        "No children, no extra unrelated people, no random second protagonist, no unrelated house, no unrelated hospital unless it is the story location.",
+        "No cartoon, no illustration, no anime, no text, no subtitles, no letters, no numbers, no watermark, no logo, no stretched faces, no deformed bodies.",
     ])
 
 
@@ -1310,7 +1638,7 @@ def make_narration(text, output):
     if Path(SAY).exists() and Path(SAY).name == "say":
         for voice in (VOICE, "Kanya"):
             raw_output.unlink(missing_ok=True)
-            run([SAY, "-v", voice, "-r", "124", "-o", str(raw_output), text])
+            run([SAY, "-v", voice, "-r", "128", "-o", str(raw_output), text])
             if raw_output.exists() and raw_output.stat().st_size > 12000:
                 break
         else:
@@ -1330,7 +1658,7 @@ def make_narration(text, output):
         "equalizer=f=260:t=q:w=1.1:g=2.0,"
         "equalizer=f=3300:t=q:w=1.2:g=-1.2,"
         "acompressor=threshold=-20dB:ratio=2.2:attack=8:release=150,"
-        "volume=1.18",
+        "volume=1.42",
         str(output),
     ])
     if not output.exists() or output.stat().st_size < 12000:
@@ -1347,16 +1675,13 @@ async def _make_narration_edge_tts(text, output):
         ) from error
 
     voices = [
-        "en-US-GuyNeural",
-        "en-US-ChristopherNeural",
-        "en-US-EricNeural",
-        "th-TH-NiwatNeural",
         "th-TH-PremwadeeNeural",
+        "th-TH-AcharaNeural",
     ]
     last_error = None
     for voice in voices:
         try:
-            communicate = edge_tts.Communicate(text, voice=voice, rate="-8%", pitch="-2Hz")
+            communicate = edge_tts.Communicate(text, voice=voice, rate="-12%", pitch="-8Hz")
             await communicate.save(str(output))
             if output.exists() and output.stat().st_size > 12000:
                 return
@@ -1375,19 +1700,34 @@ def render_video(payload, avoid=None, batch_index=None):
     work.mkdir(parents=True, exist_ok=True)
     RENDERS.mkdir(exist_ok=True)
 
-    size = (1080, 1920) if mode == "short" else (1600, 900)
-    fps = 30 if mode == "short" else 24
-    motion_preset = "veryfast" if mode == "short" else "ultrafast"
-    segment_preset = "veryfast" if mode == "short" else "ultrafast"
-    segment_crf = "22" if mode == "short" else "24"
-    segments = []
     audios = []
     durations = []
-    last_good_background = work / "last-good-background.jpg"
 
+    # Narration comes first so the actual spoken duration decides the YouTube
+    # format before any AI image is requested in a vertical or horizontal size.
     for scene in story["scenes"]:
-        base_path = work / f"base-{scene['number']:02d}.jpg"
         audio_path = work / f"voice-{scene['number']:02d}.aiff"
+        make_narration(scene["narration"], audio_path)
+        duration = ffprobe_duration(audio_path)
+        durations.append(duration)
+        audios.append(audio_path)
+
+    total_duration = sum(durations)
+    is_short = total_duration <= 180.0
+    render_format = "short" if is_short else "long"
+    size = (1080, 1920) if is_short else (1600, 900)
+    fps = 30 if is_short else 24
+    motion_preset = "veryfast" if is_short else "ultrafast"
+    segment_preset = "veryfast" if is_short else "ultrafast"
+    segment_crf = "22" if is_short else "24"
+    story["renderFormat"] = render_format
+    story["renderOrientation"] = "vertical" if is_short else "horizontal"
+    story["plannedSeconds"] = round(total_duration, 1)
+
+    segments = []
+    last_good_background = work / "last-good-background.jpg"
+    for scene, audio_path, duration in zip(story["scenes"], audios, durations):
+        base_path = work / f"base-{scene['number']:02d}.jpg"
         motion_path = work / f"motion-{scene['number']:02d}.mp4"
         overlay_path = work / f"overlay-{scene['number']:02d}.png"
         video_path = work / f"segment-{scene['number']:02d}.mp4"
@@ -1395,10 +1735,6 @@ def render_video(payload, avoid=None, batch_index=None):
         background_source = create_background(base_path, scene, story, size, last_good_background)
         if background_source == "ai":
             shutil.copy2(base_path, last_good_background)
-        make_narration(scene["narration"], audio_path)
-        duration = ffprobe_duration(audio_path)
-        durations.append(duration)
-        audios.append(audio_path)
 
         render_motion_video(
             base_path,
@@ -1447,11 +1783,10 @@ def render_video(payload, avoid=None, batch_index=None):
     for path in segments:
         path.unlink(missing_ok=True)
 
-    total_duration = sum(durations)
     music = work / "horror-music.aac"
     sfx = work / "horror-sfx.aac"
     fade_out = max(0, total_duration - 3)
-    expression = "0.135*sin(2*PI*43*t)+0.078*sin(2*PI*69*t)+0.052*sin(2*PI*(94+7*sin(2*PI*0.045*t))*t)"
+    expression = "0.172*sin(2*PI*43*t)+0.104*sin(2*PI*69*t)+0.068*sin(2*PI*(94+7*sin(2*PI*0.045*t))*t)+0.034*sin(2*PI*(156+13*sin(2*PI*0.031*t))*t)"
     run([
         FFMPEG, "-y", "-f", "lavfi", "-i",
         f"aevalsrc={expression}:s=44100:d={total_duration:.3f}",
@@ -1470,7 +1805,7 @@ def render_video(payload, avoid=None, batch_index=None):
     ])
 
     story_part = f"story-{batch_index}-" if batch_index else ""
-    file_name = f"autofilm-horror-{mode}-{story_part}{stamp}-{unique_id}.mp4"
+    file_name = f"autofilm-horror-{render_format}-{story_part}{stamp}-{unique_id}.mp4"
     output = RENDERS / file_name
     run([
         FFMPEG, "-y",
@@ -1479,10 +1814,10 @@ def render_video(payload, avoid=None, batch_index=None):
         "-i", str(music),
         "-i", str(sfx),
         "-filter_complex",
-        "[1:a]volume=1.28,asplit=3[a_voice][voice_sc_music][voice_sc_sfx];"
-        "[2:a]volume=1.25[a_music_raw];"
-        "[a_music_raw][voice_sc_music]sidechaincompress=threshold=0.042:ratio=2.8:attack=18:release=420:makeup=1[a_music];"
-        "[3:a]volume=0.66[a_sfx_raw];"
+        "[1:a]volume=1.58,asplit=3[a_voice][voice_sc_music][voice_sc_sfx];"
+        "[2:a]volume=1.72[a_music_raw];"
+        "[a_music_raw][voice_sc_music]sidechaincompress=threshold=0.058:ratio=2.2:attack=18:release=520:makeup=1.12[a_music];"
+        "[3:a]volume=0.74[a_sfx_raw];"
         "[a_sfx_raw][voice_sc_sfx]sidechaincompress=threshold=0.042:ratio=4.8:attack=8:release=280:makeup=1[a_sfx];"
         "[a_voice][a_music][a_sfx]amix=inputs=3:duration=first:dropout_transition=0,"
         "acompressor=threshold=-18dB:ratio=1.9:attack=8:release=160,alimiter=limit=0.94[aout]",
@@ -1608,6 +1943,12 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 def main():
+    if os.environ.get("DISABLE_CLOUD_TUNING") != "1":
+        try:
+            import cloud_tuning
+            cloud_tuning.install(sys.modules[__name__])
+        except Exception as error:
+            print(f"Cloud tuning skipped: {error}", flush=True)
     RENDERS.mkdir(exist_ok=True)
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"Horror AutoFilm running at http://127.0.0.1:{PORT}/", flush=True)
