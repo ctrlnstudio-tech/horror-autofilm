@@ -1,1 +1,1 @@
-run at 2026-07-10 07:49 Asia/Bangkok after restoring original image style
+run at 2026-07-10 08:59 Asia/Bangkok after visual stability and named character tuning
