@@ -544,6 +544,61 @@ EXPERIENCE_MOTIFS = [
 ]
 
 
+# These are original narrative frames inspired by the pacing of Thai
+# experience-based ghost stories: normal life first, local detail, a gradual
+# anomaly, then a restrained aftermath.  They never reuse source plots or text.
+REFERENCE_NARRATIVE_FRAMES = [
+    {
+        "id": "direct_experience",
+        "opening": "เรื่องนี้เป็นประสบการณ์ของ{name}ที่เล่าให้คนใกล้ตัวฟังหลังเหตุการณ์ผ่านไปหลายวัน เพราะตอนแรก{name}ยังพยายามอธิบายทุกอย่างว่าเป็นเรื่องบังเอิญ",
+        "ordinary": "คืนนั้น{name}เพิ่งทำธุระตามปกติเสร็จ และต้องแวะ{place}เพื่อกลับไปตรวจ{object}ที่ยังค้างอยู่ก่อนกลับบ้าน",
+        "local": "คนแถวนั้นรู้กันว่า{place}เงียบผิดปกติหลังดึก แต่ไม่มีใครเล่าเกินกว่านั้น นอกจาก{witness}ที่พูดเหมือนกันทุกครั้งว่า {rule}",
+        "response": "{name}ยังไม่คิดหนี เลือกทำงานให้เสร็จแล้วกลับไปใช้ชีวิตตามปกติ แต่ยิ่งพยายามทำตัวธรรมดา ความผิดปกติก็ยิ่งชัดขึ้น",
+        "ending": "หลังคืนนั้น{name}ยังใช้ชีวิตตามเดิม แต่ไม่ยอมแวะ{place}คนเดียวอีก และไม่เคยเล่ารายละเอียดนี้กับใครนอกจากคนที่ไว้ใจจริง ๆ",
+    },
+    {
+        "id": "retold_by_friend",
+        "opening": "เรื่องนี้ผมได้ฟังต่อมาจากเพื่อนของ{name} ซึ่งยืนยันว่าหลังจากคืนที่{place} {name}เปลี่ยนไปจนคนใกล้ตัวสังเกตได้",
+        "ordinary": "ตอนเกิดเรื่อง{name}ไม่ได้ออกไปตามหาความลึกลับ {name}แค่ต้องไป{place}ตามหน้าที่ของ{role} และตั้งใจจะกลับให้เร็วที่สุด",
+        "local": "ก่อนเข้าไป {witness}บอกว่าไม่ต้องกลัวถ้าทำธุระเสร็จแล้วรีบกลับ แต่ทิ้งคำพูดไว้ว่า {rule}",
+        "response": "เมื่อเริ่มมีเรื่องแปลก {name}ยังโทรเล่าให้เพื่อนฟังแบบติดตลก เพราะ{name}เองก็ไม่อยากเชื่อว่าเรื่องนั้นกำลังเกิดกับตัวเอง",
+        "ending": "เวลามีใครพูดถึง{place} {name}มักเงียบไปทันที เหมือนมีบางอย่างในคืนนั้นที่{name}ไม่ยอมเล่าต่อจนจบ",
+    },
+    {
+        "id": "night_shift",
+        "opening": "เหตุการณ์นี้เกิดในคืนเวรธรรมดาของ{name} คืนที่ไม่มีอะไรควรน่ากลัวไปกว่างานที่ยังทำไม่เสร็จ",
+        "ordinary": "{name}มาที่{place}ในฐานะ{role}เพื่อจัดการ{object}ให้เรียบร้อยก่อนเช้า แล้วตั้งใจว่าจะกลับบ้านทันที",
+        "local": "ระหว่างเตรียมตัวเข้าทำงาน {witness}ถามเพียงว่าได้ยินคำเตือนหรือยัง และพูดเบา ๆ ว่า {rule}",
+        "response": "เพราะคิดว่าเป็นเรื่องล้อกันในที่ทำงาน {name}จึงไม่สนใจคำเตือนนั้น และเลือกอยู่ต่อเพื่อตรวจงานให้จบ",
+        "ending": "หลังจากคืนนั้น ไม่มีใครรับเวรแทน{place}ง่าย ๆ อีก เพราะ{name}ยอมเล่าแค่ประโยคเดียวว่า อย่ารอให้ได้ยินเสียงเรียกก่อน",
+    },
+    {
+        "id": "ordinary_errand",
+        "opening": "เรื่องนี้เริ่มจากธุระเล็กมาก จน{name}บอกว่าถ้าย้อนเวลากลับไปได้ {name}คงเลือกปล่อยผ่านมันไปตั้งแต่แรก",
+        "ordinary": "หลังจากเสร็จธุระอื่น{name}แวะ{place}เพื่อตรวจดู{object} แล้วตั้งใจใช้เวลาอยู่ตรงนั้นไม่กี่นาที",
+        "local": "ขณะกำลังจะเข้าไป {witness}มองหน้า{name}นานผิดปกติ ก่อนเตือนว่า {rule} แต่ไม่ได้อธิบายว่าทำไม",
+        "response": "{name}คิดว่าเรื่องเล่าของคนแถวนั้นคงถูกพูดให้ดูน่ากลัวเกินจริง จึงเดินเข้าไปตามปกติโดยไม่บอกใคร",
+        "ending": "ต่อมา {name}กลับไปทำธุระแถวเดิมได้ แต่จะเปลี่ยนเส้นทางทุกครั้งที่ต้องผ่านหน้า{place}",
+    },
+    {
+        "id": "community_memory",
+        "opening": "คนในละแวกนั้นพูดถึง{place}แบบมีพิรุธมานาน แต่เรื่องของ{name}เป็นครั้งแรกที่มีคนยอมเล่าลำดับเหตุการณ์ทั้งหมดออกมา",
+        "ordinary": "{time} {name}ซึ่งเป็น{role}ต้องไป{place}เพราะมีคนแจ้งว่าเห็น{object}ถูกทิ้งไว้ในจุดที่ผิดปกติ และไม่มีใครคนอื่นว่างไปดู",
+        "local": "ก่อนหน้านั้น {witness}เคยบอกว่าเคยมีเหตุไม่ดีเกิดขึ้นแถวนั้น แต่ขอเพียงอย่างเดียวว่า {rule}",
+        "response": "{name}พยายามจำรายละเอียดทุกอย่างเพื่อกลับมาเล่าให้คนอื่นฟัง เพราะตอนนั้น{name}ยังเชื่อว่าเรื่องผิดปกติต้องมีคำอธิบาย",
+        "ending": "หลังเรื่องแพร่ออกไป คนในละแวกนั้นไม่ได้พูดมากขึ้น กลับเงียบกว่าเดิม เหมือนทุกคนรู้เรื่องนี้อยู่แล้วแต่ไม่อยากเป็นคนยืนยัน",
+    },
+    {
+        "id": "late_return",
+        "opening": "เป็นคืนที่{name}กลับช้ากว่าปกติเพียงนิดเดียว แต่ความต่างเพียงนิดนั้นทำให้{name}เจอสิ่งที่ไม่ควรเจอที่{place}",
+        "ordinary": "ระหว่างทางกลับ{name}ต้องหยุดที่{place}เพราะมีคนขอให้ช่วยดู{object} ซึ่งดูเป็นเหตุผลธรรมดาจนไม่คิดจะโทรบอกใคร",
+        "local": "{witness}เคยเล่าให้ฟังว่าหลังเวลาหนึ่ง อย่าอยู่แถวนั้นนาน และโดยเฉพาะ {rule}",
+        "response": "ตอนแรก{name}เร่งทำทุกอย่างให้เสร็จ แต่เมื่อสิ่งผิดปกติเกิดขึ้น {name}กลับลังเลว่าควรหนีหรือควรช่วยคนที่เหมือนกำลังเดือดร้อน",
+        "ending": "นับจากนั้น{name}พยายามกลับบ้านให้เร็วขึ้นเสมอ และไม่เคยตอบคำถามว่าในคืนนั้น{name}เห็นใครที่{place}",
+    },
+]
+
+
 def setting_title_object(setting):
     value = setting["object"].split("ที่", 1)[0].strip()
     return value[:18] or setting["object"][:18]
@@ -556,6 +611,7 @@ def experience_scene_specs(seed):
 
     setting = seed["_setting"]
     motif = seed["_motif"]
+    frame = seed["_frame"]
     name = seed["name"]
     place = setting["place"]
     place_visual = setting["visual"]
@@ -571,22 +627,22 @@ def experience_scene_specs(seed):
     rule = seed["rule"]
 
     lines = [
-        f"เรื่องนี้เกิดขึ้นที่{place} {motif['hook'].format(place=place, object=object_name, name=name)}",
-        f"คืน{time_text} {name}ซึ่งทำงานเป็น{role}ต้องกลับไปที่{place} เพราะมีคนแจ้งว่าเจอ{object_name}วางอยู่ในจุดที่ไม่ควรมีใครเข้าไปได้",
-        f"ก่อนเดินเข้าไป {witness}โทรมาเตือนเพียงประโยคเดียวว่า {rule} แล้วก็รีบวางสายเหมือนไม่อยากฟังคำตอบจาก{name}",
-        f"ด้านใน{place}เงียบผิดปกติ มีแค่{sensory}ลอยอยู่ในอากาศ และ{object_name}วางนิ่งอยู่ตรงหน้าเหมือนรอให้เขาเข้าไปหยิบ",
-        f"{name}ยังไม่ทันแตะของชิ้นนั้น ก็เห็น{clue}อยู่ข้าง ๆ รายละเอียดมันใหม่เกินกว่าจะเป็นของที่ถูกทิ้งไว้นานแล้ว",
-        f"เขาถ่ายรูปเก็บหลักฐาน แต่ในจอที่ไม่มีข้อความอ่านได้กลับมีเงาคนยืนอยู่หลังเขา ทั้งที่บริเวณนั้นว่างเปล่า",
+        frame["opening"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
+        frame["ordinary"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
+        frame["local"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
+        f"พอเข้าไปถึง{name}พบว่า{place}ไม่ได้มืดจนมองอะไรไม่เห็น แต่ความเงียบกับ{sensory}ทำให้{name}รู้สึกเหมือนมีใครกำลังฟังทุกก้าวที่เดิน",
+        f"{object_name}วางอยู่ในจุดที่คนทำงานแถวนั้นไม่น่าจะลืมไว้ ข้างกันมี{clue}ซึ่งดูใหม่เกินกว่าจะเป็นร่องรอยเก่า",
+        f"{name}พยายามหาเหตุผลให้ตัวเอง {name}ส่องดูรอบ ๆ และคิดว่าอาจมีใครแกล้ง แต่ยิ่งอยู่นานก็ยิ่งรู้สึกว่าบรรยากาศใน{place}เปลี่ยนไป",
         f"{motif['manifestation'].format(place=place, object=object_name, name=name)}",
-        f"{name}พยายามโทรขอความช่วยเหลือ แต่ปลายสายกลับมีเพียงเสียงลมหายใจช้า ๆ และเสียงนั้นดังซ้อนกับเสียงที่มาจากมุมมืดของ{place}",
-        f"เมื่อเขาหันไปมอง กระจกหรือหน้าต่างใกล้ตัวสะท้อนภาพ{ghost} แต่ในห้องจริงยังไม่มีใครยืนอยู่ตรงนั้น",
-        f"{name}ตัดสินใจวาง{object_name}คืนที่เดิม แล้วรีบเดินออกไป แต่ทางเดินกลับพาเขาวนมาที่จุดเดิมเหมือนสถานที่นี้ไม่ยอมให้เขาออก",
+        frame["response"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
+        f"เมื่อ{name}หันไปมอง กระจกหรือหน้าต่างใกล้ตัวสะท้อนภาพ{ghost} แต่ในห้องจริงยังไม่มีใครยืนอยู่ตรงนั้น",
+        f"{name}จึงตัดสินใจวาง{object_name}คืนที่เดิมและออกจาก{place} แต่ทางที่เพิ่งเดินเข้ามากลับพาเขาวนมาที่จุดเดิมอย่างไม่น่าเป็นไปได้",
         f"ทุกครั้งที่วนกลับมา ไฟจะมืดลงอีกหนึ่งดวง และ{object_name}จะอยู่ใกล้มือของ{name}มากขึ้น ทั้งที่เขาไม่เคยแตะมันเลย",
-        f"ตอนนั้นเอง เขาเห็นหลักฐานเก่าที่ทำให้รู้ว่าเหตุการณ์แบบเดียวกันเคยเกิดขึ้นมาก่อน และคนที่หายไปในคืนนั้นก็ทำงานตำแหน่งเดียวกับเขา",
+        f"เมื่อโทรถาม {witness}อีกครั้ง คราวนี้อีกฝ่ายยอมบอกว่าเคยมีคนเจอเหตุคล้ายกันที่{place} และคนคนนั้นหายไปหลังกลับไปเอา{object_name}",
         f"{motif['reveal'].format(place=place, object=object_name, name=name)}",
         f"{name}รวบรวมสติ ทำตามคำเตือนที่ว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้จะได้ยินเสียงเรียกชื่อดังขึ้นอยู่ข้างหลัง",
         f"เช้าวันถัดมา {witness}กลับมาที่{place}และพบ{object_name}อยู่ตรงเดิม แต่คราวนี้ข้าง ๆ มันมีของใช้ของ{name}วางเพิ่มมาอีกชิ้น",
-        f"ตั้งแต่นั้น ไม่มีใครพูดถึง{place}ในคืนฝนตกอีก เพราะบางครั้งคนที่ผ่านไปแถวนั้นจะเห็น{ghost}ปรากฏตรงปลายทาง เหมือนกำลังรอคนรับเรื่องต่อไป",
+        frame["ending"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
     ]
     visuals = [
         f"opening establishing shot of {place_visual}; {object_visual} clearly visible in the foreground; no people",
@@ -626,6 +682,7 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     setting = random.choice(setting_candidates or EXPERIENCE_SETTINGS)
     motif_candidates = [item for item in EXPERIENCE_MOTIFS if item["id"] not in blocked_patterns]
     motif = random.choice(motif_candidates or EXPERIENCE_MOTIFS)
+    frame = random.choice(REFERENCE_NARRATIVE_FRAMES)
     name = random.choice(THAI_NAMES)
     title = motif["title"].format(place=setting["place"], object_title=setting_title_object(setting))
     pattern = {"name": motif["id"]}
@@ -645,6 +702,7 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
         "_experience": True,
         "_setting": setting,
         "_motif": motif,
+        "_frame": frame,
     })
     return seed
 
