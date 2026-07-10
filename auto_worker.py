@@ -35,7 +35,7 @@ def append_log(event):
 
 def make_description(story, footer):
     title = story.get("title", "เรื่องผี")
-    place = title.split("...", 1)[1] if "..." in title else title
+    place = story.get("seed", {}).get("placeTitle") or title
     parts = [
         f"เรื่องหลอนจาก{place}",
         "",
