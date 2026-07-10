@@ -79,7 +79,7 @@ def compact_object_title(object_name):
         "เทปวิดีโอ", "กล่องยา", "ม้วนฟิล์ม", "นาฬิกา", "เสื้อกันฝน", "ตลับเทป",
         "ตุ๊กตาไม้", "กุญแจห้อง", "กุญแจ", "ซองจดหมาย", "ไฟฉาย", "กล่องรับฝาก",
         "ผ้าคลุมกระจก", "บัตรพนักงาน", "แฟ้มคดี", "สมุดลงชื่อ", "รูปถ่าย",
-        "พวงกุญแจ", "บัตรคิว",
+        "พวงกุญแจ", "บัตรคิว", "ใบเสร็จ",
     ]
     for key in keys:
         if key in object_name:
@@ -252,7 +252,48 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     name = random.choice(THAI_NAMES)
     candidates = SCENARIO_PACKS[:]
     random.shuffle(candidates)
-    scenario = next((item for item in candidates if item["place"][0] not in avoid.get("places", set())), candidates[0])
+    blocked_places = avoid.get("places", set())
+    blocked_patterns = avoid.get("patterns", set())
+    curated = [
+        item for item in candidates
+        if item["place"][0] not in blocked_places and item["pattern"] not in blocked_patterns
+    ]
+    use_curated = curated and random.random() < 0.22
+    if use_curated:
+        scenario = random.choice(curated)
+    else:
+        scenario = {
+            "pattern": seed["pattern"]["name"],
+            "place": seed["place"],
+            "protagonist": seed["protagonist"],
+            "object": seed["object"],
+            "ghost": seed["ghost"],
+            "event": seed["event"],
+            "twist": seed["twist"],
+            "witness": seed["witness"],
+            "sensory": seed["sensory"],
+            "clue": seed["clue"],
+            "rule": seed["rule"],
+            "final_image": seed["final_image"],
+        }
+        for _ in range(8):
+            if scenario["place"][0] not in blocked_places and scenario["pattern"] not in blocked_patterns:
+                break
+            retry = original_make_seed(brief, avoid=avoid)
+            scenario.update({
+                "pattern": retry["pattern"]["name"],
+                "place": retry["place"],
+                "protagonist": retry["protagonist"],
+                "object": retry["object"],
+                "ghost": retry["ghost"],
+                "event": retry["event"],
+                "twist": retry["twist"],
+                "witness": retry["witness"],
+                "sensory": retry["sensory"],
+                "clue": retry["clue"],
+                "rule": retry["rule"],
+                "final_image": retry["final_image"],
+            })
     pattern = next(item for item in server.STORY_PATTERNS if item["name"] == scenario["pattern"])
     ghost = replace_hero_word(scenario["ghost"], name)
     if scenario["ghost"] == "แม่ของตัวเอก":
@@ -282,15 +323,14 @@ def story_lines(server, original_story_lines, seed, mode):
         return [clean_story_line(line, seed) for line in original_story_lines(seed, mode)]
 
     base = [clean_story_line(server.fill_story_template(template, seed).strip(), seed) for template in seed["pattern"]["beats"]]
-    if mode == "short":
-        return base
-
     middles = [clean_story_line(server.fill_story_template(template, seed).strip(), seed) for template in seed["pattern"].get("middles", [])]
     lines = []
     middle_groups = {2: middles[0:2], 4: middles[2:4], 6: middles[4:6], 8: middles[6:8]}
     for index, line in enumerate(base, start=1):
         lines.append(line)
         lines.extend(middle_groups.get(index, []))
+    if mode == "short":
+        return lines
     return [clean_story_line(server.expand_long_line(line, seed, index, len(lines)), seed) for index, line in enumerate(lines, start=1)]
 
 
@@ -309,7 +349,7 @@ def install_make_story_tuning(server):
     def tuned_make_story(mode, brief, avoid=None):
         seed = server.make_seed(brief, avoid=avoid)
         lines = server.story_lines(seed, mode)
-        target_seconds = 180 if mode == "short" else 420
+        target_seconds = 174 if mode == "short" else 420
         duration = max(6, round(target_seconds / len(lines)))
         scenes = []
         for index, line in enumerate(lines, start=1):
@@ -371,12 +411,49 @@ def install_visual_tuning(server):
     # existing prompts translate the story objects/roles more clearly.
 
 
+def aligned_scene_visual_detail(server, seed, line, number):
+    place_th, place_en = seed["place"]
+    role = server.ROLE_VISUALS.get(seed["protagonist"], f"one adult Thai {seed['protagonist']}")
+    object_visual = server.OBJECT_VISUALS.get(seed["object"], seed["object"])
+    ghost_visual = server.GHOST_VISUALS.get(seed["ghost"], seed["ghost"])
+    event_visual = server.EVENT_VISUALS.get(seed["event"], seed["event"])
+
+    if number == 1:
+        return f"opening shot of {place_en}, the forbidden place clearly visible, {object_visual} in the foreground, no people yet"
+    if "สุดท้าย" in line or "ตั้งแต่นั้น" in line or "หลังจากคืนนั้น" in line or "เหลือเพียง" in line:
+        return f"final aftermath shot of {place_en}, {object_visual} or {ghost_visual} remains as the haunting clue, no extra people"
+    if seed["event"] in line or "ทุกอย่างเกิดขึ้น" in line:
+        return f"{event_visual} inside {place_en}, {role} frozen in fear, cinematic practical lighting"
+    if seed["ghost"] in line or "ปรากฏ" in line or "เงา" in line:
+        return f"{ghost_visual} appearing subtly at the dark edge of {place_en}, {role} in the same frame but only one living person"
+    if any(token in line for token in ("ถูกเรียก", "เข้าไปเอา", "เข้าไปที่นั่น", "ก้าวเข้า", "เดินเข้าไป")):
+        return f"{role} entering {place_en} at night, {object_visual} visible nearby, tense but realistic"
+    if seed["object"] in line or "ของชิ้นนั้น" in line or "ของต้องห้าม" in line:
+        return f"close shot of {object_visual} placed inside {place_en}, ominous empty space around it"
+    if "โทร" in line or "มือถือ" in line or "ปลายสาย" in line:
+        return f"{role} holding a glowing mobile phone inside {place_en}, the location clearly visible behind them, no readable text"
+    if "ชื่อ" in line or "บันทึก" in line or "เอกสาร" in line or "สมุด" in line or "แฟ้ม" in line or "หลักฐาน" in line:
+        return f"{role} discovering old evidence beside {object_visual} inside {place_en}, no readable writing"
+    if "กระจก" in line:
+        return f"{role} staring into a dirty mirror inside {place_en}, {ghost_visual} appears only as a reflection"
+    if "รอยเท้า" in line:
+        return f"wet footprints circling on the floor of {place_en}, {role} standing back with a flashlight"
+    if "นาฬิกา" in line:
+        return f"old clocks inside {place_en}, all stopped strangely, {role} looking terrified"
+    if "ทางเดิน" in line or "ประตู" in line:
+        return f"a tense corridor or doorway inside {place_en}, {object_visual} still visible as the key clue"
+    return f"{role} inside {place_en}, {object_visual} nearby, {ghost_visual} suggested in the shadows, realistic horror scene"
+
+
 def install_image_stability_tuning(server):
     original_scene_visual_detail = server.scene_visual_detail
     original_ai_image_prompt = server.ai_image_prompt
 
     def stable_scene_visual_detail(seed, line, number):
-        visual = original_scene_visual_detail(seed, line, number)
+        if seed.get("_curated"):
+            visual = aligned_scene_visual_detail(server, seed, line, number)
+        else:
+            visual = original_scene_visual_detail(seed, line, number)
         stability = (
             "medium or wide Thai horror film shot, location and forbidden object dominate, "
             "one adult person at most, person seen from behind or in partial shadow, "
