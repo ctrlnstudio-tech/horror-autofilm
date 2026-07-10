@@ -1633,16 +1633,51 @@ def render_motion_video(base_path, output_path, size, duration, seed_text, fps=3
     ])
 
 
+def say_chunks(text, max_chars=72):
+    remaining = " ".join(text.split()).strip()
+    chunks = []
+    while remaining:
+        if len(remaining) <= max_chars:
+            chunks.append(remaining)
+            break
+        cut = max(
+            remaining.rfind(mark, 0, max_chars + 1)
+            for mark in (" ", ",", "…", "ๆ")
+        )
+        if cut < max_chars // 2:
+            cut = max_chars
+        chunks.append(remaining[:cut].strip())
+        remaining = remaining[cut:].strip()
+    return [chunk for chunk in chunks if chunk]
+
+
 def make_narration(text, output):
     raw_output = output.with_name(f"{output.stem}-raw.aiff")
+    generated_parts = []
     if Path(SAY).exists() and Path(SAY).name == "say":
-        for voice in (VOICE, "Kanya"):
-            raw_output.unlink(missing_ok=True)
-            run([SAY, "-v", voice, "-r", "128", "-o", str(raw_output), text])
-            if raw_output.exists() and raw_output.stat().st_size > 12000:
-                break
+        # macOS Kanya can return a header-only AIFF for a long Thai sentence.
+        # Rendering short phrases independently keeps local fallback narration reliable.
+        for index, chunk in enumerate(say_chunks(text), start=1):
+            part = output.with_name(f"{output.stem}-part-{index:02d}.aiff")
+            for voice in (VOICE, "Kanya"):
+                part.unlink(missing_ok=True)
+                run([SAY, "-v", voice, "-r", "128", "-o", str(part), chunk])
+                if part.exists() and part.stat().st_size > 12000:
+                    generated_parts.append(part)
+                    break
+            else:
+                raise RuntimeError("สร้างเสียงพากย์ไม่สำเร็จ ไฟล์เสียงที่ระบบได้กลับมาว่างหรือเสีย")
+
+        if len(generated_parts) == 1:
+            raw_output = generated_parts[0]
         else:
-            raise RuntimeError("สร้างเสียงพากย์ไม่สำเร็จ ไฟล์เสียงที่ระบบได้กลับมาว่างหรือเสีย")
+            part_list = output.with_name(f"{output.stem}-parts.txt")
+            part_list.write_text("".join(f"file '{part}'\n" for part in generated_parts), encoding="utf-8")
+            run([
+                FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(part_list),
+                "-c:a", "pcm_s16be", str(raw_output),
+            ])
+            part_list.unlink(missing_ok=True)
         input_audio = raw_output
     else:
         raw_output = output.with_name(f"{output.stem}-raw.mp3")
@@ -1663,6 +1698,9 @@ def make_narration(text, output):
     ])
     if not output.exists() or output.stat().st_size < 12000:
         raise RuntimeError("แปลงเสียงพากย์ไม่สำเร็จ ไฟล์เสียงสั้นหรือเสียผิดปกติ")
+    for part in generated_parts:
+        if part != raw_output:
+            part.unlink(missing_ok=True)
 
 
 async def _make_narration_edge_tts(text, output):
