@@ -1,6 +1,23 @@
 import random
 
 
+THAI_NAMES = [
+    "นนท์", "ตั้ม", "วิน", "บาส", "ก้อง", "พีท", "อาร์ม", "เต้", "มอส", "เคน",
+    "มายด์", "ฝน", "แพร", "นุ่น", "เมย์", "แนน", "ขวัญ", "ฟ้า", "พลอย", "จูน",
+    "เอม", "ดา", "มิ้น", "น้ำ", "แป้ง", "เบลล์", "ป่าน", "ออย", "กิ๊ฟ", "รุ้ง",
+]
+
+
+def replace_hero_word(text, name):
+    if not isinstance(text, str):
+        return text
+    return text.replace("ตัวเอก", name)
+
+
+def clean_story_line(line, seed):
+    return replace_hero_word(line, seed.get("name") or "นนท์")
+
+
 async def scary_female_edge_tts(text, output):
     try:
         import edge_tts
@@ -26,7 +43,10 @@ def install(server):
     server.make_seed = lambda brief, avoid=None: make_coherent_seed(server, original_make_seed, brief, avoid)
     server.story_lines = lambda seed, mode: story_lines(server, original_story_lines, seed, mode)
     server._make_narration_edge_tts = scary_female_edge_tts
+    install_story_name_tuning(server)
     install_visual_tuning(server)
+    install_image_stability_tuning(server)
+    install_make_story_tuning(server)
     original_run = server.run
 
     def tuned_run(command):
@@ -229,23 +249,28 @@ SCENARIO_PACKS = [
 def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     seed = original_make_seed(brief, avoid=avoid)
     avoid = avoid or {}
+    name = random.choice(THAI_NAMES)
     candidates = SCENARIO_PACKS[:]
     random.shuffle(candidates)
     scenario = next((item for item in candidates if item["place"][0] not in avoid.get("places", set())), candidates[0])
     pattern = next(item for item in server.STORY_PATTERNS if item["name"] == scenario["pattern"])
+    ghost = replace_hero_word(scenario["ghost"], name)
+    if scenario["ghost"] == "แม่ของตัวเอก":
+        server.GHOST_VISUALS[ghost] = "a mother-shaped shadow at the edge of a dark room"
     seed.update({
         "title": make_story_title(server, scenario["place"][0], scenario["object"], scenario["pattern"], brief),
+        "name": name,
         "place": scenario["place"],
         "protagonist": scenario["protagonist"],
         "object": scenario["object"],
-        "ghost": scenario["ghost"],
-        "event": scenario["event"],
-        "twist": scenario["twist"],
-        "witness": scenario["witness"],
-        "sensory": scenario["sensory"],
-        "clue": scenario["clue"],
-        "rule": scenario["rule"],
-        "final_image": scenario["final_image"],
+        "ghost": ghost,
+        "event": replace_hero_word(scenario["event"], name),
+        "twist": replace_hero_word(scenario["twist"], name),
+        "witness": replace_hero_word(scenario["witness"], name),
+        "sensory": replace_hero_word(scenario["sensory"], name),
+        "clue": replace_hero_word(scenario["clue"], name),
+        "rule": replace_hero_word(scenario["rule"], name),
+        "final_image": replace_hero_word(scenario["final_image"], name),
         "pattern": pattern,
         "_curated": True,
     })
@@ -254,19 +279,67 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
 
 def story_lines(server, original_story_lines, seed, mode):
     if not seed.get("_curated"):
-        return original_story_lines(seed, mode)
+        return [clean_story_line(line, seed) for line in original_story_lines(seed, mode)]
 
-    base = [server.fill_story_template(template, seed).strip() for template in seed["pattern"]["beats"]]
+    base = [clean_story_line(server.fill_story_template(template, seed).strip(), seed) for template in seed["pattern"]["beats"]]
     if mode == "short":
         return base
 
-    middles = [server.fill_story_template(template, seed).strip() for template in seed["pattern"].get("middles", [])]
+    middles = [clean_story_line(server.fill_story_template(template, seed).strip(), seed) for template in seed["pattern"].get("middles", [])]
     lines = []
     middle_groups = {2: middles[0:2], 4: middles[2:4], 6: middles[4:6], 8: middles[6:8]}
     for index, line in enumerate(base, start=1):
         lines.append(line)
         lines.extend(middle_groups.get(index, []))
-    return [server.expand_long_line(line, seed, index, len(lines)) for index, line in enumerate(lines, start=1)]
+    return [clean_story_line(server.expand_long_line(line, seed, index, len(lines)), seed) for index, line in enumerate(lines, start=1)]
+
+
+def install_story_name_tuning(server):
+    original_story_context = server.story_context
+
+    def tuned_story_context(seed):
+        context = original_story_context(seed)
+        context["name"] = seed.get("name") or "นนท์"
+        return context
+
+    server.story_context = tuned_story_context
+
+
+def install_make_story_tuning(server):
+    def tuned_make_story(mode, brief, avoid=None):
+        seed = server.make_seed(brief, avoid=avoid)
+        lines = server.story_lines(seed, mode)
+        target_seconds = 124 if mode == "short" else 420
+        duration = max(6, round(target_seconds / len(lines)))
+        scenes = []
+        for index, line in enumerate(lines, start=1):
+            scenes.append({
+                "number": index,
+                "beat": "เสียงเล่าเรื่องต่อเนื่อง",
+                "duration": duration,
+                "narration": clean_story_line(line, seed),
+                "visual": server.scene_visual_detail(seed, line, index),
+            })
+        return {
+            "mode": mode,
+            "title": seed["title"],
+            "seed": {
+                "name": seed.get("name", ""),
+                "placeTitle": seed["place"][0],
+                "placeVisual": seed["place"][1],
+                "protagonist": seed["protagonist"],
+                "object": seed["object"],
+                "ghost": seed["ghost"],
+                "event": seed["event"],
+                "twist": seed["twist"],
+                "pattern": seed["pattern"]["name"],
+            },
+            "targetSeconds": target_seconds,
+            "scenes": scenes,
+            "script": "\n\n".join(clean_story_line(line, seed) for line in lines),
+        }
+
+    server.make_story = tuned_make_story
 
 
 def install_visual_tuning(server):
@@ -296,6 +369,33 @@ def install_visual_tuning(server):
     })
     # Keep the original image prompt style. The mapping updates above only help
     # existing prompts translate the story objects/roles more clearly.
+
+
+def install_image_stability_tuning(server):
+    original_scene_visual_detail = server.scene_visual_detail
+    original_ai_image_prompt = server.ai_image_prompt
+
+    def stable_scene_visual_detail(seed, line, number):
+        visual = original_scene_visual_detail(seed, line, number)
+        stability = (
+            "medium or wide Thai horror film shot, location and forbidden object dominate, "
+            "one adult person at most, person seen from behind or in partial shadow, "
+            "faces small and not close to camera, hands mostly hidden, realistic body proportions"
+        )
+        return f"{visual}, {stability}"
+
+    def stable_ai_image_prompt(scene, story, size):
+        prompt = original_ai_image_prompt(scene, story, size)
+        return " ".join([
+            prompt,
+            "Keep the original scene meaning exactly.",
+            "Avoid close-up portraits, visible hands, extra fingers, warped bodies, melted faces, duplicated people, random children, random extra characters.",
+            "Use a restrained realistic Thai horror movie look with natural colors, practical lighting, and clear location detail.",
+            "Show the exact place and the key object or event from this scene; do not replace it with an unrelated old house.",
+        ])
+
+    server.scene_visual_detail = stable_scene_visual_detail
+    server.ai_image_prompt = stable_ai_image_prompt
 
 
 def scene_image_directives(server, scene, story):
