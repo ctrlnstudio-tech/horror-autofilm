@@ -309,7 +309,7 @@ def install_make_story_tuning(server):
     def tuned_make_story(mode, brief, avoid=None):
         seed = server.make_seed(brief, avoid=avoid)
         lines = server.story_lines(seed, mode)
-        target_seconds = 124 if mode == "short" else 420
+        target_seconds = 180 if mode == "short" else 420
         duration = max(6, round(target_seconds / len(lines)))
         scenes = []
         for index, line in enumerate(lines, start=1):
