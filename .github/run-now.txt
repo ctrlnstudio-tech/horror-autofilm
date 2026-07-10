@@ -1,1 +1,1 @@
-run at 2026-07-10 08:59 Asia/Bangkok after visual stability and named character tuning
+run at 2026-07-10 22:20 Asia/Bangkok to verify duration-based vertical Shorts and horizontal standard video rendering
