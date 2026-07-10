@@ -1,1 +1,1 @@
-run at 2026-07-10 06:56 Asia/Bangkok after schedule reliability fix
+run at 2026-07-10 07:25 Asia/Bangkok after title and image prompt fix
