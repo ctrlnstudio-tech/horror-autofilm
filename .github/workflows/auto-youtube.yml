@@ -30,6 +30,14 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Restore recent story and visual history
+        uses: actions/cache/restore@v4
+        with:
+          path: .automation-history.json
+          key: horror-generation-history-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            horror-generation-history-
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -75,6 +83,13 @@ jobs:
           YOUTUBE_CLIENT_SECRETS_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
           YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
         run: python3 auto_worker.py --once --upload
+
+      - name: Save recent story and visual history
+        if: always() && hashFiles('.automation-history.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .automation-history.json
+          key: horror-generation-history-${{ github.run_id }}-${{ github.run_attempt }}
 
       - name: Mark schedule slot done
         if: steps.slot.outputs.scheduled == 'true' && steps.slot-lock.outputs.cache-hit != 'true'
