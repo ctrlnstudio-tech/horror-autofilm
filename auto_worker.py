@@ -16,6 +16,7 @@ cloud_tuning.install(server)
 ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "auto_config.json"
 LOG_PATH = ROOT / "automation_log.jsonl"
+HISTORY_PATH = ROOT / ".automation-history.json"
 
 
 def load_config():
@@ -33,6 +34,60 @@ def append_log(event):
         file.write(json.dumps(event, ensure_ascii=False) + "\n")
 
 
+def load_generation_history():
+    if not HISTORY_PATH.exists():
+        return []
+    try:
+        data = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    if isinstance(data, dict):
+        data = data.get("entries", [])
+    return [item for item in data if isinstance(item, dict)] if isinstance(data, list) else []
+
+
+def recent_unique(history, key, limit):
+    values = []
+    for item in reversed(history):
+        value = item.get(key)
+        if value and value not in values:
+            values.append(value)
+        if len(values) >= limit:
+            break
+    return values
+
+
+def make_recent_avoidance(history):
+    return {
+        "titles": recent_unique(history, "title", 20),
+        "places": recent_unique(history, "place", 8),
+        "patterns": recent_unique(history, "pattern", 5),
+        "frames": recent_unique(history, "narrativeFrame", 4),
+        "profiles": recent_unique(history, "visualProfile", 4),
+        "openingModes": recent_unique(history, "openingMode", 3),
+    }
+
+
+def save_generation_history(history, videos):
+    for video in videos:
+        story = video.get("story", {})
+        seed = story.get("seed", {})
+        history.append({
+            "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "title": story.get("title", ""),
+            "place": seed.get("placeTitle", ""),
+            "pattern": seed.get("pattern", ""),
+            "narrativeFrame": seed.get("narrativeFrame", ""),
+            "visualProfile": seed.get("visualProfile", ""),
+            "openingMode": seed.get("openingMode", ""),
+            "visualNonce": seed.get("visualNonce", ""),
+        })
+    payload = {"entries": history[-80:]}
+    temporary = HISTORY_PATH.with_suffix(".tmp")
+    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary.replace(HISTORY_PATH)
+
+
 def make_description(story, footer):
     title = story.get("title", "เรื่องผี")
     place = story.get("seed", {}).get("placeTitle") or title
@@ -47,10 +102,12 @@ def make_description(story, footer):
 
 def run_once(upload_override=None):
     config = load_config()
+    generation_history = load_generation_history()
     payload = {
         "mode": config.get("mode", "short"),
         "brief": config.get("brief", ""),
         "count": config.get("count", 1),
+        "avoidRecent": make_recent_avoidance(generation_history),
     }
     upload_enabled = config.get("uploadToYouTube", False) if upload_override is None else upload_override
 
@@ -62,6 +119,7 @@ def run_once(upload_override=None):
     })
 
     videos = server.render_video_batch(payload)
+    save_generation_history(generation_history, videos)
     results = []
     youtube_config = config.get("youtube", {})
 
