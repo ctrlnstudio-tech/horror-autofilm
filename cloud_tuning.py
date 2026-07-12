@@ -1,4 +1,5 @@
 import random
+import re
 
 
 THAI_NAMES = [
@@ -550,35 +551,59 @@ EXPERIENCE_MOTIFS = [
 REFERENCE_NARRATIVE_FRAMES = [
     {
         "id": "direct_experience",
-        "opening": "เรื่องนี้เป็นประสบการณ์ของ{name}ที่เล่าให้คนใกล้ตัวฟังหลังเหตุการณ์ผ่านไปหลายวัน เพราะตอนแรก{name}ยังพยายามอธิบายทุกอย่างว่าเป็นเรื่องบังเอิญ",
-        "ordinary": "คืนนั้น{name}เพิ่งทำธุระตามปกติเสร็จ และต้องแวะ{place}เพื่อกลับไปตรวจ{object}ที่ยังค้างอยู่ก่อนกลับบ้าน",
-        "local": "คนแถวนั้นรู้กันว่า{place}เงียบผิดปกติหลังดึก แต่ไม่มีใครเล่าเกินกว่านั้น นอกจาก{witness}ที่พูดเหมือนกันทุกครั้งว่า {rule}",
-        "response": "{name}ยังไม่คิดหนี เลือกทำงานให้เสร็จแล้วกลับไปใช้ชีวิตตามปกติ แต่ยิ่งพยายามทำตัวธรรมดา ความผิดปกติก็ยิ่งชัดขึ้น",
-        "ending": "หลังคืนนั้น{name}ยังใช้ชีวิตตามเดิม แต่ไม่ยอมแวะ{place}คนเดียวอีก และไม่เคยเล่ารายละเอียดนี้กับใครนอกจากคนที่ไว้ใจจริง ๆ",
+        "opening": "เรื่องนี้{name}เป็นคนเล่าเอง ตอนแรกผมยังนึกว่าเขาเล่าธรรมดา ๆ แต่พอได้ฟังจริง ๆ น้ำเสียงมันเหมือนคนที่ยังติดคืนนั้นอยู่",
+        "ordinary": "ตอนนั้น{name}มีธุระธรรมดามาก แค่แวะ{place}เพื่อไปดู{object}ที่ยังค้างอยู่ แล้วคิดว่าเดี๋ยวก็กลับ ไม่มีอะไรน่ากังวลเลย",
+        "local": "แต่พอไปถึง {witness}ก็มองหน้าแล้วพูดสั้น ๆ ว่า \"อย่าอยู่นาน\" ก่อนย้ำอีกทีว่า {rule} แบบคนที่พูดเหมือนรู้อยู่ก่อนแล้ว",
+        "response": "ตอนแรก{name}ก็ยังคิดว่าเป็นคำเตือนทั่ว ๆ ไปจากคนพื้นที่ เลยทำเหมือนทุกอย่างปกติ แต่พออยู่ต่ออีกนิดเดียว ความเงียบใน{place}มันเริ่มกดลงมาจนรู้สึกได้",
+        "ending": "หลังคืนนั้น{name}ไม่เคยกลับไป{place}คนเดียวอีกเลย และทุกครั้งที่มีคนถาม เขาจะหยุดกลางประโยคเหมือนยังไม่อยากนึกถึงรายละเอียดทั้งหมด",
     },
     {
         "id": "retold_by_friend",
-        "opening": "เรื่องนี้ผมได้ฟังต่อมาจากเพื่อนของ{name} ซึ่งยืนยันว่าหลังจากคืนที่{place} {name}เปลี่ยนไปจนคนใกล้ตัวสังเกตได้",
-        "ordinary": "ตอนเกิดเรื่อง{name}ไม่ได้ออกไปตามหาความลึกลับ {name}แค่ต้องไป{place}ตามหน้าที่ของ{role} และตั้งใจจะกลับให้เร็วที่สุด",
-        "local": "ก่อนเข้าไป {witness}บอกว่าไม่ต้องกลัวถ้าทำธุระเสร็จแล้วรีบกลับ แต่ทิ้งคำพูดไว้ว่า {rule}",
-        "response": "เมื่อเริ่มมีเรื่องแปลก {name}ยังโทรเล่าให้เพื่อนฟังแบบติดตลก เพราะ{name}เองก็ไม่อยากเชื่อว่าเรื่องนั้นกำลังเกิดกับตัวเอง",
-        "ending": "เวลามีใครพูดถึง{place} {name}มักเงียบไปทันที เหมือนมีบางอย่างในคืนนั้นที่{name}ไม่ยอมเล่าต่อจนจบ",
+        "opening": "ผมได้ฟังเรื่องนี้ต่อมาจากเพื่อนของ{name} อีกที เพราะหลังคืนที่{place} ทุกคนพูดเหมือนกันว่า{name}เปลี่ยนไปจริง ๆ แบบคนที่ไม่ค่อยอยากเล่าเรื่องตัวเองแล้ว",
+        "ordinary": "จริง ๆ แล้ว{name}ไม่ได้อยากไปเจออะไรลึกลับด้วยซ้ำ วันนั้นแค่ต้องไป{place}ตามงานของ{role} แล้วคิดว่าจะกลับไว ๆ เหมือนทุกครั้ง",
+        "local": "ก่อนเข้าไป {witness}ยังเรียกไว้เบา ๆ ว่า \"ถ้าจะไปก็รีบไป\" แล้วทิ้งคำเตือนสั้น ๆ ว่า {rule} เหมือนคนที่ไม่อยากให้ใครต้องลองผิดเอง",
+        "response": "พอเริ่มเจอเรื่องแปลก {name}ยังพยายามโทรเล่าให้เพื่อนฟังแบบติดตลก เหมือนยังไม่อยากยอมรับว่าตัวเองกำลังติดอยู่ในสถานการณ์ที่อธิบายไม่ได้",
+        "ending": "หลังจากนั้นทุกครั้งที่มีใครพูดถึง{place} {name}จะเงียบไปก่อนเสมอ เหมือนถ้าพูดต่ออีกนิด เรื่องทั้งหมดจะย้อนกลับมาอีกครั้ง",
     },
     {
         "id": "night_shift",
-        "opening": "เหตุการณ์นี้เกิดในคืนเวรธรรมดาของ{name} คืนที่ไม่มีอะไรควรน่ากลัวไปกว่างานที่ยังทำไม่เสร็จ",
-        "ordinary": "{name}มาที่{place}ในฐานะ{role}เพื่อจัดการ{object}ให้เรียบร้อยก่อนเช้า แล้วตั้งใจว่าจะกลับบ้านทันที",
-        "local": "ระหว่างเตรียมตัวเข้าทำงาน {witness}ถามเพียงว่าได้ยินคำเตือนหรือยัง และพูดเบา ๆ ว่า {rule}",
-        "response": "เพราะคิดว่าเป็นเรื่องล้อกันในที่ทำงาน {name}จึงไม่สนใจคำเตือนนั้น และเลือกอยู่ต่อเพื่อตรวจงานให้จบ",
-        "ending": "หลังจากคืนนั้น ไม่มีใครรับเวรแทน{place}ง่าย ๆ อีก เพราะ{name}ยอมเล่าแค่ประโยคเดียวว่า อย่ารอให้ได้ยินเสียงเรียกก่อน",
+        "opening": "คืนเวรของ{name}ควรจะเป็นคืนธรรมดามาก ๆ แต่เรื่องนี้กลับกลายเป็นคืนที่{name}เล่าแล้วต้องหยุดหายใจไปก่อนทุกครั้ง",
+        "ordinary": "{name}ไป{place}ในฐานะ{role} เพื่อจัดการ{object} ให้เสร็จก่อนเช้า และตั้งใจไว้ชัดเจนว่าทำงานเสร็จก็จะกลับทันที",
+        "local": "ตอนเตรียมเข้าพื้นที่ {witness}ถามย้ำสั้น ๆ ว่าได้ยินคำเตือนหรือยัง แล้วพูดเบามากว่า {rule} เหมือนคนที่รู้ว่าคืนนี้ไม่ควรฝืนอยู่ต่อ",
+        "response": "แต่เพราะคิดว่าเป็นเรื่องแซวกันในที่ทำงาน {name}จึงอยู่ต่อ ตรวจต่อ และพยายามทำเหมือนไม่มีอะไร ทั้งที่ตั้งแต่นาทีแรกก็เริ่มรู้สึกว่าไม่ปกติแล้ว",
+        "ending": "หลังคืนนั้นไม่มีใครอยากรับเวรแทน{place}ง่าย ๆ อีก และคำที่{name}ยอมพูดออกมามีแค่ประโยคเดียวว่า อย่ารอให้มันเรียกชื่อก่อน",
     },
     {
         "id": "ordinary_errand",
-        "opening": "เรื่องนี้เริ่มจากธุระเล็กมาก จน{name}บอกว่าถ้าย้อนเวลากลับไปได้ {name}คงเลือกปล่อยผ่านมันไปตั้งแต่แรก",
-        "ordinary": "หลังจากเสร็จธุระอื่น{name}แวะ{place}เพื่อตรวจดู{object} แล้วตั้งใจใช้เวลาอยู่ตรงนั้นไม่กี่นาที",
-        "local": "ขณะกำลังจะเข้าไป {witness}มองหน้า{name}นานผิดปกติ ก่อนเตือนว่า {rule} แต่ไม่ได้อธิบายว่าทำไม",
-        "response": "{name}คิดว่าเรื่องเล่าของคนแถวนั้นคงถูกพูดให้ดูน่ากลัวเกินจริง จึงเดินเข้าไปตามปกติโดยไม่บอกใคร",
-        "ending": "ต่อมา {name}กลับไปทำธุระแถวเดิมได้ แต่จะเปลี่ยนเส้นทางทุกครั้งที่ต้องผ่านหน้า{place}",
+        "opening": "เรื่องนี้เริ่มจากธุระเล็กมาก ๆ จน{name}บอกเองว่าถ้าย้อนกลับไปได้ ก็คงไม่เข้า{place}ตั้งแต่วันนั้น",
+        "ordinary": "หลังจากทำอย่างอื่นเสร็จ {name}แวะ{place}เพื่อดู{object} ที่ค้างอยู่ และคิดจริง ๆ ว่าจะอยู่แค่ไม่กี่นาทีแล้วกลับ",
+        "local": "แต่พอจะเดินเข้าไป {witness}กลับมองหน้าอยู่นานผิดปกติ ก่อนจะเตือนแค่ว่า \"อย่าหยุดอยู่ตรงนั้น\" และย้ำอีกทีว่า {rule} โดยไม่ยอมขยายความต่อ",
+        "response": "ตอนนั้น{name}ยังคิดว่าเรื่องที่คนแถวนั้นเล่าคงถูกเติมสีให้ดูน่ากลัวเกินจริง เลยเดินเข้าไปเหมือนไม่มีอะไร และไม่ได้บอกใครเลย",
+        "ending": "หลังจากนั้น{name}ยังกลับไปแถวนั้นได้เหมือนเดิม แต่จะเลือกอ้อมทุกครั้งที่ต้องผ่านหน้า{place} เหมือนร่างกายจำทางหนีเองได้ก่อนสมอง",
+    },
+    {
+        "id": "quiet_return",
+        "opening": "เรื่องนี้ไม่มีอะไรเริ่มต้นยิ่งใหญ่เลย มันเริ่มจากคืนธรรมดา ๆ ที่{name}คิดว่าแค่แวะไปเอาของแล้วกลับบ้าน",
+        "ordinary": "วันนั้น{name}มีธุระกับ{place}อยู่แล้ว เพราะต้องเอา{object}ไปส่งหรือไปดูให้เรียบร้อย และคิดว่าคงใช้เวลาไม่นาน",
+        "local": "แต่พอเดินเข้าไป {witness}ก็พูดเหมือนคนที่รู้มาก่อนแล้วว่า {rule} จากนั้นก็ไม่ยอมพูดต่ออีก",
+        "response": "ตอนนั้น{name}ยังไม่เชื่อมากนัก คิดแค่ว่าคนแถวนั้นอาจพูดขู่กันเล่น แต่พอยิ่งอยู่ใน{place}นาน ความเงียบมันกลับยิ่งเหมือนมีน้ำหนัก",
+        "ending": "หลังจากนั้น{name}จะเลี่ยง{place}ทุกครั้งที่ผ่าน และไม่เคยเล่าเรื่องนี้แบบละเอียดให้ใครฟังอีกเลย",
+    },
+    {
+        "id": "local_warning",
+        "opening": "ถ้าถาม{name}ตรง ๆ ว่าเรื่องนี้น่ากลัวตรงไหน เขาจะบอกว่าไม่ใช่ตัวผี แต่เป็นตอนที่คนพื้นที่พูดเตือนเขานั่นแหละ ที่ทำให้เริ่มรู้สึกแปลก",
+        "ordinary": "วันนั้น{name}แค่ต้องไป{place}เพราะงานของ{role}ยังค้างอยู่ และตั้งใจจะจัดการทุกอย่างให้เสร็จในรอบเดียว",
+        "local": "พอไปถึง {witness}ก็มองหน้าแล้วบอกสั้น ๆ ว่า \"อย่าอยู่คนเดียว\" ก่อนเตือนอีกทีว่า {rule} เสียงของเขาเรียบมากจนยิ่งน่าคิด",
+        "response": "ตอนแรก{name}ยังพยายามหัวเราะกลบเกลื่อน แต่พอเข้าไปลึกขึ้นและเริ่มเจอ{object}กับร่องรอยแปลก ๆ ความมั่นใจก็หายไปทีละนิด",
+        "ending": "สุดท้าย{name}กลับออกมาได้ แต่ทุกครั้งที่มีคนถามถึง{place} เขาจะตอบแค่สั้น ๆ ว่า \"มันไม่ใช่ที่ที่ควรเข้าไปตอนดึก\" แล้วก็หยุด",
+    },
+    {
+        "id": "afterthought",
+        "opening": "เรื่องนี้เป็นประเภทที่ยิ่งนึกย้อนกลับไป ยิ่งรู้สึกว่ามีหลายจุดที่ตอนนั้นควรจะสังเกตได้ แต่ไม่มีใครทันคิด",
+        "ordinary": "{name}เข้าไป{place}เพราะเรื่องธรรมดาเกี่ยวกับ{object} เท่านั้น ไม่ได้คิดว่าคืนนั้นจะกลายเป็นเรื่องที่จำไปอีกนาน",
+        "local": "{witness}ไม่ได้ห้ามตรง ๆ แค่พูดทิ้งไว้ว่า {rule} แล้วเดินหนีไปเหมือนไม่อยากเป็นคนเล่าต่อ",
+        "response": "{name}จึงยังทำธุระต่อเหมือนไม่มีอะไร แต่พอเห็น{object}หรือได้ยินเสียงแปลก ๆ ซ้ำ ๆ ก็เริ่มรู้สึกว่าบางอย่างมันไม่พอดีตั้งแต่แรกแล้ว",
+        "ending": "หลังคืนดังกล่าว{name}ไม่กล้าพูดว่าตัวเองเห็นอะไรชัด ๆ แต่ทุกคนที่รู้เรื่องต่างบอกตรงกันว่าเขาเปลี่ยนไปมากตั้งแต่นั้น",
     },
     {
         "id": "community_memory",
@@ -599,9 +624,297 @@ REFERENCE_NARRATIVE_FRAMES = [
 ]
 
 
+VISUAL_PROFILES = [
+    "observational Thai night-film realism with neutral natural colors and restrained handheld energy",
+    "precise architectural suspense with practical fluorescent light and deep layered backgrounds",
+    "rain-soaked Thai location realism with wet reflections, controlled contrast and natural skin tones",
+    "quiet rural nocturne with available moonlight, warm practical lamps and realistic exposure",
+    "claustrophobic workplace realism with foreground machinery, narrow sightlines and practical work lights",
+    "pre-dawn documentary realism with soft mist, subdued natural color and clear environmental detail",
+    "old tungsten interior realism with dusty air, selective focus and believable low-light exposure",
+    "surveillance-informed thriller realism with high corners and long-lens layers, without screen overlays",
+]
+
+
+CAMERA_GRAMMAR = {
+    "eye_wide": "24mm eye-level wide shot",
+    "low_wide": "28mm low-angle wide shot with strong foreground depth",
+    "high_wide": "35mm high-corner wide shot looking diagonally across the real space",
+    "profile": "50mm side-profile medium shot with the face visible in profile",
+    "three_quarter": "65mm three-quarter medium close shot with a natural adult face",
+    "object_insert": "85mm object-level insert close-up with the location still identifiable behind it",
+    "overhead": "top-down evidence composition",
+    "door_frame": "frame-within-a-frame shot through a doorway, service window or structural opening",
+    "reflection": "layered reflection shot through wet glass or a dull reflective surface",
+    "pov": "subjective point-of-view shot from the protagonist's eye line",
+    "long_lens": "85mm long-lens shot with foreground obstruction and a deep background clue",
+    "floor_level": "floor-level 28mm shot with the clue large in the foreground",
+}
+
+
+SCENE_CAMERA_OPTIONS = [
+    ("eye_wide", "low_wide", "high_wide", "profile", "three_quarter", "object_insert", "door_frame", "reflection"),
+    ("profile", "three_quarter", "door_frame", "low_wide", "pov"),
+    ("object_insert", "profile", "three_quarter", "reflection", "long_lens"),
+    ("eye_wide", "high_wide", "door_frame", "long_lens", "pov"),
+    ("object_insert", "overhead", "floor_level", "pov", "long_lens"),
+    ("profile", "three_quarter", "long_lens", "door_frame", "reflection"),
+    ("object_insert", "floor_level", "overhead", "long_lens", "pov"),
+    ("profile", "three_quarter", "reflection", "door_frame", "object_insert"),
+    ("reflection", "profile", "three_quarter", "long_lens", "door_frame"),
+    ("pov", "high_wide", "long_lens", "floor_level", "door_frame"),
+    ("eye_wide", "high_wide", "object_insert", "floor_level", "long_lens"),
+    ("overhead", "object_insert", "profile", "three_quarter", "door_frame"),
+    ("three_quarter", "profile", "long_lens", "low_wide", "reflection"),
+    ("profile", "low_wide", "door_frame", "high_wide", "pov"),
+    ("overhead", "object_insert", "eye_wide", "floor_level", "high_wide"),
+    ("eye_wide", "low_wide", "high_wide", "long_lens", "reflection", "object_insert"),
+]
+
+
+def build_experience_visuals(seed):
+    setting = seed["_setting"]
+    motif = seed["_motif"]
+    place_visual = setting["visual"]
+    role_visual = setting["role_visual"]
+    object_visual = setting["object_visual"]
+    ghost = motif["ghost"]
+    visual_profile = seed["_visual_profile"]
+    rng = random.Random(seed["_visual_nonce"])
+    recent_cameras = []
+    camera_counts = {}
+
+    def choose_camera(scene_index, override_options=None):
+        options = list(override_options or SCENE_CAMERA_OPTIONS[scene_index])
+        eligible = [
+            camera for camera in options
+            if camera not in recent_cameras[-3:] and camera_counts.get(camera, 0) < 2
+        ]
+        if not eligible:
+            eligible = [
+                camera for camera in options
+                if camera not in recent_cameras[-2:] and camera_counts.get(camera, 0) < 2
+            ]
+        if not eligible:
+            eligible = [camera for camera in options if camera_counts.get(camera, 0) < 2]
+        if not eligible:
+            eligible = [camera for camera in options if camera not in recent_cameras[-2:]] or options
+        camera = rng.choice(eligible)
+        recent_cameras.append(camera)
+        camera_counts[camera] = camera_counts.get(camera, 0) + 1
+        return CAMERA_GRAMMAR[camera]
+
+    opening_modes = [
+        (
+            "human_action",
+            f"exactly one {role_visual} paused beside {object_visual} at {place_visual}; "
+            "the adult face is visible in three-quarter profile and the person is reacting to the object, not walking",
+        ),
+        (
+            "object_hook",
+            f"{object_visual} dominates the foreground while the architecture of {place_visual} is unmistakable behind it; no people",
+        ),
+        (
+            "location_hook",
+            f"the distinctive entrance and working details of {place_visual} fill the frame; {object_visual} sits under one practical light; no people",
+        ),
+        (
+            "threshold_hook",
+            f"exactly one {role_visual} at the threshold of {place_visual}, face and both eyes readable in a three-quarter angle while looking toward {object_visual}",
+        ),
+        (
+            "reflection_hook",
+            f"a reflection in wet glass reveals {place_visual} and {object_visual}; no people and no human silhouette",
+        ),
+    ]
+    blocked_opening_modes = set(seed.get("_blocked_opening_modes", ()))
+    opening_candidates = [item for item in opening_modes if item[0] not in blocked_opening_modes]
+    opening_mode, opening_action = rng.choice(opening_candidates or opening_modes)
+    seed["_opening_mode"] = opening_mode
+    opening_camera_options = {
+        "human_action": ("profile", "three_quarter", "low_wide", "door_frame"),
+        "object_hook": ("object_insert", "overhead", "floor_level", "long_lens"),
+        "location_hook": ("eye_wide", "low_wide", "high_wide", "door_frame"),
+        "threshold_hook": ("profile", "three_quarter", "door_frame", "long_lens"),
+        "reflection_hook": ("reflection",),
+    }
+
+    actions = [
+        opening_action,
+        f"exactly one {role_visual} arriving at the identifiable entrance of {place_visual}, pausing in side or three-quarter view with face visible and a flashlight held low",
+        f"exactly one {role_visual} listening to a phone beside the entrance of {place_visual}; {object_visual} remains visible; screen blank and unreadable",
+        f"the empty interior of {place_visual} with {object_visual} at the exact work area described; environmental details dominate; no people",
+        f"{object_visual} beside one fresh physical clue on the correct counter or floor inside {place_visual}; no people, no writing",
+        f"exactly one {role_visual} checking the room from a side or three-quarter angle inside {place_visual}; one faint human-like shadow only in the far background",
+        f"{object_visual} has moved closer within the same identifiable part of {place_visual}; no people and no unrelated props",
+        f"exactly one {role_visual} taking a tense phone call inside {place_visual}, face visible in profile; empty space behind and no readable screen",
+        f"exactly one {role_visual} facing a dirty reflective surface in {place_visual}; {ghost} appears only in the reflection, not as a second normal person",
+        f"a repeating passage inside {place_visual} seen as a subjective or side-on composition; {object_visual} marks the far end; the passage itself is the subject",
+        f"one practical light failing inside the clearly identifiable {place_visual}; {object_visual} unnaturally close in the foreground; no people",
+        f"exactly one {role_visual} discovering old physical evidence beside {object_visual} inside {place_visual}; adult face in profile or three-quarter view; all papers blank",
+        f"exactly one {role_visual} frozen in fear inside {place_visual}; {ghost} is a restrained distant background presence and not another living person",
+        f"exactly one {role_visual} crossing the exit of {place_visual} laterally in full side profile with the face outline visible; {object_visual} remains in the interior",
+        f"morning aftermath at the exact work area in {place_visual}; {object_visual} beside one abandoned personal belonging; no people",
+        f"final haunting view of the distinctive {place_visual}; {ghost} is a tiny distant clue and {object_visual} is visible in a different foreground plane; no living people",
+    ]
+
+    visuals = []
+    for index, action in enumerate(actions):
+        opening_options = opening_camera_options[opening_mode] if index == 0 else None
+        camera = choose_camera(index, opening_options)
+        visuals.append(
+            f"{camera}; {action}; {visual_profile}; single cinematic frame, natural colors, exact character count"
+        )
+    return visuals
+
+
 def setting_title_object(setting):
     value = setting["object"].split("ที่", 1)[0].strip()
     return value[:18] or setting["object"][:18]
+
+
+def short_place_reference(place):
+    for token in ("ของ", "บน", "ใต้", "หลัง", "ริม", "ข้าง", "ท้าย", "หน้า", "เที่ยว", "จุด", "สถานี", "ห้อง", "ท่า", "ปั๊ม", "บ้าน", "คลัง", "หอ", "โรง", "ร้าน", "อู่"):
+        if place.startswith(token):
+            break
+    candidates = [
+        place.replace("ของที่ทำการไปรษณีย์เก่า", "ไปรษณีย์เก่า"),
+        place.replace("บนถนนสายเก่า", ""),
+        place.replace("ของโรงพยาบาลอำเภอเก่า", "โรงพยาบาลเก่า"),
+        place.replace("ท้ายหมู่บ้าน", ""),
+        place.replace("ของโรงภาพยนตร์ปิดกิจการ", "โรงหนังเก่า"),
+        place.replace("หลังตลาดเช้า", ""),
+        place.replace("ริมแม่น้ำ", ""),
+    ]
+    for candidate in candidates:
+        candidate = candidate.strip()
+        if candidate and len(candidate) < len(place):
+            return candidate
+    return place
+
+
+def short_object_reference(object_name):
+    aliases = {
+        "ตั๋วเที่ยวสุดท้ายที่ยังเปียกอยู่": "ตั๋วเที่ยวสุดท้าย",
+        "เหรียญโดยสารที่เย็นจัดเหมือนแช่น้ำแข็ง": "เหรียญโดยสาร",
+        "ป้ายชื่อผู้ป่วยที่ไม่มีชื่อพิมพ์อยู่": "ป้ายชื่อผู้ป่วย",
+        "มาตรวัดน้ำที่เข็มหมุนถอยหลังเอง": "มาตรวัดน้ำ",
+        "ฟิล์มม้วนสุดท้ายที่ไม่มีชื่อเรื่อง": "ฟิล์มม้วนสุดท้าย",
+        "สมุดส่งของที่หน้ากระดาษเปียกทั้งเล่ม": "สมุดส่งของ",
+        "เชือกตีระฆังที่เปียกเหมือนเพิ่งถูกจับ": "เชือกตีระฆัง",
+        "บัตรลงเวลาที่เจาะรูเพิ่มขึ้นทุกคืน": "บัตรลงเวลา",
+        "กุญแจเรือที่มีเชือกผูกด้วยผมเปียก": "กุญแจเรือ",
+        "กล่องพัสดุที่จ่าหน้าถึงคนตาย": "กล่องพัสดุ",
+        "ปุ่มลิฟต์สำรองที่มีรอยนิ้วมือเปียก": "ปุ่มลิฟต์สำรอง",
+        "นาฬิกาพกที่หยุดตรงเวลาขบวนสุดท้าย": "นาฬิกาพก",
+        "ใบเสร็จเติมน้ำมันที่ยังอุ่นอยู่": "ใบเสร็จเติมน้ำมัน",
+        "กุญแจห้องพักที่ไม่มีหมายเลข": "กุญแจห้องพัก",
+        "เทปบันทึกเสียงที่มีลมหายใจอยู่ท้ายม้วน": "เทปบันทึกเสียง",
+        "รองเท้าหนังคู่เดิมที่เปียกโคลนทุกคืน": "รองเท้าหนัง",
+        "กระสอบข้าวที่มีรอยมือกดจากข้างใน": "กระสอบข้าว",
+        "ซองยาที่มีชื่อคนไข้ถูกลบออกหมด": "ซองยา",
+        "บัตรยืมหนังสือที่มีลายเซ็นเพิ่มเอง": "บัตรยืมหนังสือ",
+        "ถุงหลักฐานที่มีโทรศัพท์สั่นอยู่ข้างใน": "ถุงหลักฐาน",
+        "บัตรจอดรถที่มีเวลาออกเป็นวันพรุ่งนี้": "บัตรจอดรถ",
+        "หน้ากากละครที่หันมามองคนละทางทุกครั้ง": "หน้ากากละคร",
+        "ตั๋วเรือฉีกครึ่งที่กลับมาติดกันเอง": "ตั๋วเรือ",
+    }
+    if object_name in aliases:
+        return aliases[object_name]
+    replacements = [
+        ("ที่ยังอุ่นอยู่", ""),
+        ("ที่ยังค้างอยู่", ""),
+        ("ที่ไม่มีชื่อพิมพ์อยู่", ""),
+        ("ที่จ่าหน้าถึงคนตาย", "พัสดุนั้น"),
+        ("ที่เข็มหมุนถอยหลังเอง", "มาตรวัดน้ำ"),
+        ("ที่มีลมหายใจอยู่ท้ายม้วน", "เทปบันทึกเสียง"),
+        ("ที่มีรอยมือเปียก", "ผ้าคลุมกระจก"),
+    ]
+    value = object_name
+    for old, new in replacements:
+        value = value.replace(old, new)
+    value = re.sub(r"\s+", " ", value).strip()
+    return compact_object_title(value)
+
+
+def derive_setting_details(setting):
+    place = setting["place"]
+    if "โรงละคร" in place:
+        return {
+            "sensory": "กลิ่นฝุ่นผสมกลิ่นผ้าเก่าที่อับอยู่หลังฉาก",
+            "clue": "เศษสีฉากหลุดเป็นทางไปถึงมุมมืด",
+            "rule": "ห้ามเปิดม่านหลังเวทีคนเดียว",
+            "time": "หลังโรงละครปิดได้ไม่นาน",
+        }
+    if "ปั๊มน้ำมัน" in place:
+        return {
+            "sensory": "กลิ่นน้ำมันเก่าปนลมอับจากห้องเก็บของ",
+            "clue": "ใบเสร็จยับ ๆ ที่พิมพ์เวลาเกินจากที่ปั๊มปิด",
+            "rule": "ห้ามหันไปดูหัวจ่ายที่ไม่มีรถจอด",
+            "time": "หลังปั๊มปิดไปนานแล้ว",
+        }
+    if "ไปรษณีย์" in place or "พัสดุ" in place:
+        return {
+            "sensory": "กลิ่นกระดาษชื้นกับผ้าใบกระสอบเก่า",
+            "clue": "พัสดุหล่นอยู่ใบหนึ่งทั้งที่ไม่มีชื่อผู้ส่ง",
+            "rule": "ห้ามตอบถ้ามีคนเรียกจากด้านในห้องคัดแยก",
+            "time": "หลังที่ทำการปิดเงียบไปแล้ว",
+        }
+    if "แพ" in place or "ท่าเรือ" in place:
+        return {
+            "sensory": "กลิ่นน้ำค้างแม่น้ำกับเชือกเปียกที่ชื้นค้างอยู่",
+            "clue": "รอยน้ำเป็นทางเหมือนมีใครเดินขึ้นมาจากท่า",
+            "rule": "ห้ามเรียกชื่อใครตรงท่าน้ำหลังเที่ยงคืน",
+            "time": "หลังเรือเที่ยวสุดท้ายออกไปแล้ว",
+        }
+    if "โรงพยาบาล" in place or "คลินิก" in place:
+        return {
+            "sensory": "กลิ่นยาฆ่าเชื้อจาง ๆ ปนลมเย็นจากห้องปิด",
+            "clue": "ป้ายชื่อคนไข้ตกอยู่ทั้งที่ไม่ควรมีใครเข้ามาแล้ว",
+            "rule": "ห้ามตอบถ้ามีคนเรียกจากเตียงที่ว่างอยู่",
+            "time": "หลังเวรดึกเริ่มเงียบลง",
+        }
+    if "วัด" in place or "หอระฆัง" in place:
+        return {
+            "sensory": "กลิ่นธูปเก่ากับลมเย็นจากลานวัดที่ไม่มีคน",
+            "clue": "คราบน้ำเป็นรอยมืออยู่ตรงเสาไม้",
+            "rule": "ห้ามขานชื่อคนที่ได้ยินจากในวัด",
+            "time": "คืนวันพระใหญ่",
+        }
+    if "รถไฟ" in place:
+        return {
+            "sensory": "กลิ่นสนิมกับเสียงเหล็กกระทบกันเบา ๆ จากทางมืด",
+            "clue": "เศษกรวดถูกเขี่ยเป็นทางไปถึงรางเก่า",
+            "rule": "ห้ามเดินตามเสียงหวีดที่ไม่มีขบวนรถ",
+            "time": "หลังขบวนสุดท้ายผ่านไปแล้ว",
+        }
+    if "ตลาด" in place:
+        return {
+            "sensory": "กลิ่นของค้างคืนกับพื้นเปียกที่ยังไม่แห้ง",
+            "clue": "รอยเท้าเปียกเดินสวนทางกับทางออก",
+            "rule": "ห้ามตอบถ้ามีคนถามหาของที่ไม่มีร้านไหนขายแล้ว",
+            "time": "หลังตลาดวายไปนานแล้ว",
+        }
+    if "โรงสี" in place or "โรงน้ำแข็ง" in place or "สูบน้ำ" in place:
+        return {
+            "sensory": "เสียงเครื่องเก่าที่เหมือนยังเดินอยู่ทั้งที่ปิดไฟหมดแล้ว",
+            "clue": "คราบเปียกใหม่ ๆ อยู่ตรงพื้นแห้ง",
+            "rule": "ห้ามเปิดสวิตช์ตัวสุดท้ายในห้องเครื่อง",
+            "time": "ดึกมากจนไม่มีคนงานเหลืออยู่แล้ว",
+        }
+    if "หอสมุด" in place:
+        return {
+            "sensory": "กลิ่นกระดาษเก่ากับฝุ่นอับจากชั้นในสุด",
+            "clue": "บัตรยืมเก่าถูกเสียบค้างอยู่ในเล่มที่ไม่มีใครแตะ",
+            "rule": "ห้ามอ่านชื่อคนยืมคนสุดท้ายออกเสียง",
+            "time": "หลังห้องอ่านหนังสือปิดไฟหมดแล้ว",
+        }
+    return {
+        "sensory": "ลมเย็นแปลก ๆ กับความเงียบที่กดลงมาจนได้ยินแต่เสียงตัวเอง",
+        "clue": "รอยเปียกใหม่ ๆ อยู่ในจุดที่ไม่ควรมีใครผ่านมา",
+        "rule": "ห้ามหันกลับไปมองหลังได้ยินเสียงครั้งที่สาม",
+        "time": "เกือบตีสาม",
+    }
 
 
 def experience_scene_specs(seed):
@@ -614,10 +927,12 @@ def experience_scene_specs(seed):
     frame = seed["_frame"]
     name = seed["name"]
     place = setting["place"]
+    place_short = short_place_reference(place)
     place_visual = setting["visual"]
     role = setting["role"]
     role_visual = setting["role_visual"]
     object_name = setting["object"]
+    object_short = short_object_reference(object_name)
     object_visual = setting["object_visual"]
     witness = setting["witness"]
     ghost = motif["ghost"]
@@ -627,41 +942,24 @@ def experience_scene_specs(seed):
     rule = seed["rule"]
 
     lines = [
-        frame["opening"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
-        frame["ordinary"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
-        frame["local"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
-        f"พอเข้าไปถึง{name}พบว่า{place}ไม่ได้มืดจนมองอะไรไม่เห็น แต่ความเงียบกับ{sensory}ทำให้{name}รู้สึกเหมือนมีใครกำลังฟังทุกก้าวที่เดิน",
-        f"{object_name}วางอยู่ในจุดที่คนทำงานแถวนั้นไม่น่าจะลืมไว้ ข้างกันมี{clue}ซึ่งดูใหม่เกินกว่าจะเป็นร่องรอยเก่า",
-        f"{name}พยายามหาเหตุผลให้ตัวเอง {name}ส่องดูรอบ ๆ และคิดว่าอาจมีใครแกล้ง แต่ยิ่งอยู่นานก็ยิ่งรู้สึกว่าบรรยากาศใน{place}เปลี่ยนไป",
-        f"{motif['manifestation'].format(place=place, object=object_name, name=name)}",
-        frame["response"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
-        f"เมื่อ{name}หันไปมอง กระจกหรือหน้าต่างใกล้ตัวสะท้อนภาพ{ghost} แต่ในห้องจริงยังไม่มีใครยืนอยู่ตรงนั้น",
-        f"{name}จึงตัดสินใจวาง{object_name}คืนที่เดิมและออกจาก{place} แต่ทางที่เพิ่งเดินเข้ามากลับพาเขาวนมาที่จุดเดิมอย่างไม่น่าเป็นไปได้",
-        f"ทุกครั้งที่วนกลับมา ไฟจะมืดลงอีกหนึ่งดวง และ{object_name}จะอยู่ใกล้มือของ{name}มากขึ้น ทั้งที่เขาไม่เคยแตะมันเลย",
-        f"เมื่อโทรถาม {witness}อีกครั้ง คราวนี้อีกฝ่ายยอมบอกว่าเคยมีคนเจอเหตุคล้ายกันที่{place} และคนคนนั้นหายไปหลังกลับไปเอา{object_name}",
-        f"{motif['reveal'].format(place=place, object=object_name, name=name)}",
-        f"{name}รวบรวมสติ ทำตามคำเตือนที่ว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้จะได้ยินเสียงเรียกชื่อดังขึ้นอยู่ข้างหลัง",
-        f"เช้าวันถัดมา {witness}กลับมาที่{place}และพบ{object_name}อยู่ตรงเดิม แต่คราวนี้ข้าง ๆ มันมีของใช้ของ{name}วางเพิ่มมาอีกชิ้น",
-        frame["ending"].format(name=name, place=place, object=object_name, role=role, time=time_text, witness=witness, rule=rule),
+        frame["opening"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
+        f"{frame['ordinary'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} ตอนนั้น{name}ยังคิดอยู่เลยว่าเดี๋ยวทำเสร็จก็คงกลับ ไม่มีอะไรต้องคิดมาก",
+        f"{frame['local'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} ตอนที่{name}มาเล่า เขาบอกว่าคำเตือนนี้แหละที่ย้อนกลับมาดังอยู่ในหัวตลอดทั้งคืน",
+        f"พอ{name}เข้าไปถึง{place_short}จริง ๆ อย่างแรกที่รู้สึกได้เลยคือมันเงียบผิดปกติ เงียบจน{sensory}เด่นขึ้นมาชัด ๆ เหมือนทั้งที่นั้นมีแค่เขาอยู่คนเดียว",
+        f"พอเดินเข้าไปลึกอีกหน่อย ตรงจุดที่ควรจะเจอ{object_short} กลับมี{clue}โผล่อยู่ก่อน เหมือนมีใครทิ้งไว้ให้เห็นจงใจมากกว่าจะเป็นเรื่องบังเอิญ",
+        f"ตอนนั้น{name}ยังพยายามคิดเข้าข้างตัวเองอยู่ ว่าอาจมีคนงานคนอื่นผ่านมา หรือใครสักคนแกล้งไว้ แต่ยิ่งอยู่ใน{place_short}นาน ความรู้สึกเหมือนมีสายตาคอยมองก็ยิ่งชัดขึ้น",
+        f"{motif['manifestation'].format(place=place_short, object=object_short, name=name)} จุดนี้เองที่{name}เริ่มรู้ว่าถ้าจะถอย ก็คงต้องถอยตอนนี้",
+        f"{frame['response'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} แต่ปัญหาคือยิ่งพยายามทำเหมือนไม่มีอะไร ทุกอย่างรอบตัวก็ยิ่งแปลกขึ้นเรื่อย ๆ",
+        f"พอ{name}เผลอหันไปมองกระจกหรือหน้าต่างอีกด้าน {ghost}กลับไปอยู่ตรงนั้น ทั้งที่ในห้องจริงยังว่างเปล่าอยู่เหมือนเดิม เขาบอกว่าตอนนั้นทั้งตัวชาไปหมด",
+        f"{name}เลยรีบวาง{object_short}คืนที่เดิมแล้วหันหลังจะออกจาก{place_short} แต่ทางที่เพิ่งเดินเข้ามากลับพาเขาวนกลับมาจุดเดิม เหมือนสถานที่นั้นไม่ยอมปล่อยให้ออกไปง่าย ๆ",
+        f"ยิ่งวนกลับมากี่ครั้ง ไฟยิ่งดับทีละดวง และ{object_short}ก็ยิ่งมาอยู่ใกล้มือของ{name}มากขึ้น ทั้งที่เขาแทบไม่ได้แตะมันเลย",
+        f"ตอน{name}โทรถาม{witness}อีกครั้ง อีกฝ่ายยอมพูดแค่ว่าเคยมีคนเจอเหตุคล้ายกันที่{place_short} แล้วคืนนั้นคนคนนั้นก็ไม่กลับออกมาอีกหลังพยายามเอา{object_short}ออกไป ก่อนจะวางสายไปดื้อ ๆ",
+        f"{motif['reveal'].format(place=place_short, object=object_short, name=name)} ตอนเล่าถึงตรงนี้{name}เงียบไปพักใหญ่ เหมือนยังไม่แน่ใจว่าควรพูดออกมาดีไหม",
+        f"สุดท้าย{name}ก็รวบรวมสติ ทำตามคำเตือนที่ว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้จะได้ยินเสียงเรียกชื่อดังตามหลังมาติด ๆ",
+        f"เช้าวันถัดมา {witness}กลับไปดูที่{place_short}แล้วพบ{object_short}อยู่ที่เดิม แต่ข้าง ๆ มันมีของใช้ของ{name}เพิ่มมาอีกชิ้นหนึ่ง ทั้งที่ไม่มีเหตุผลเลยว่าของชิ้นนั้นจะไปอยู่ตรงนั้นได้ยังไง",
+        f"{frame['ending'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} และ{name}ก็ไม่เคยเล่าต่อว่าหลังจากเดินออกมาแล้ว เขาได้ยินอะไรตามหลังมาอีกหรือเปล่า",
     ]
-    visuals = [
-        f"opening establishing shot of {place_visual}; {object_visual} clearly visible in the foreground; no people",
-        f"{role_visual} arriving alone at {place_visual} at night, carrying a flashlight, tense realistic film frame",
-        f"close shot of an old mobile phone in {role_visual}'s hand at the entrance of {place_visual}; no readable screen, no other person",
-        f"empty interior of {place_visual}; {object_visual} placed alone at the exact central location described, practical light and natural colors",
-        f"close evidence shot inside {place_visual}; {object_visual} beside a subtle fresh clue on the floor, no person, no readable text",
-        f"{role_visual} alone checking a phone camera inside {place_visual}; a single subtle human-like shadow appears only in the distant background",
-        f"{object_visual} in the exact location inside {place_visual}, now slightly closer to camera; no person, no extra objects",
-        f"{role_visual} alone listening to a mobile phone inside {place_visual}; empty corridor behind, no readable screen, one person only",
-        f"{role_visual} alone facing a dirty reflective surface in {place_visual}; {ghost} appears only as a faint reflection",
-        f"{role_visual} walking alone through a repeating corridor or passage inside {place_visual}; {object_visual} visible at the far end",
-        f"wide empty shot of {place_visual}; one practical light turning off and {object_visual} unnaturally near the foreground, no person",
-        f"{role_visual} alone discovering old physical evidence in {place_visual}; {object_visual} visible beside it, all documents blank and unreadable",
-        f"{role_visual} frozen in fear inside {place_visual}; {ghost} is a subtle distant background presence, one living person only",
-        f"rear view of {role_visual} leaving {place_visual} alone without turning back; the forbidden object remains behind",
-        f"morning aftermath at {place_visual}; {object_visual} and one abandoned personal belonging on the exact counter or floor, no people",
-        f"final haunting exterior of {place_visual} in rain; {ghost} far in the background, no living people, restrained realistic Thai horror",
-    ]
+    visuals = build_experience_visuals(seed)
     specs = [
         {"narration": narration, "visual": visual, "imagePrompt": visual}
         for narration, visual in zip(lines, visuals)
@@ -675,6 +973,9 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     avoid = avoid or {}
     blocked_places = avoid.get("places", set())
     blocked_patterns = avoid.get("patterns", set())
+    blocked_frames = avoid.get("frames", set())
+    blocked_profiles = avoid.get("profiles", set())
+    blocked_opening_modes = avoid.get("openingModes", set())
     setting_candidates = [item for item in EXPERIENCE_SETTINGS if item["place"] not in blocked_places]
     if brief.strip():
         matched = [item for item in EXPERIENCE_SETTINGS if item["place"] in brief]
@@ -682,8 +983,13 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     setting = random.choice(setting_candidates or EXPERIENCE_SETTINGS)
     motif_candidates = [item for item in EXPERIENCE_MOTIFS if item["id"] not in blocked_patterns]
     motif = random.choice(motif_candidates or EXPERIENCE_MOTIFS)
-    frame = random.choice(REFERENCE_NARRATIVE_FRAMES)
+    frame_candidates = [item for item in REFERENCE_NARRATIVE_FRAMES if item["id"] not in blocked_frames]
+    frame = random.choice(frame_candidates or REFERENCE_NARRATIVE_FRAMES)
     name = random.choice(THAI_NAMES)
+    details = derive_setting_details(setting)
+    visual_profile_candidates = [item for item in VISUAL_PROFILES if item not in blocked_profiles]
+    visual_profile = random.choice(visual_profile_candidates or VISUAL_PROFILES)
+    visual_nonce = f"{random.getrandbits(64):016x}"
     title = motif["title"].format(place=setting["place"], object_title=setting_title_object(setting))
     pattern = {"name": motif["id"]}
 
@@ -697,12 +1003,19 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
         "event": motif["manifestation"].format(place=setting["place"], object=setting["object"], name=name),
         "twist": motif["reveal"].format(place=setting["place"], object=setting["object"], name=name),
         "witness": setting["witness"],
+        "sensory": details["sensory"],
+        "clue": details["clue"],
+        "rule": details["rule"],
+        "time": details["time"],
         "final_image": setting["object"],
         "pattern": pattern,
         "_experience": True,
         "_setting": setting,
         "_motif": motif,
         "_frame": frame,
+        "_visual_profile": visual_profile,
+        "_visual_nonce": visual_nonce,
+        "_blocked_opening_modes": blocked_opening_modes,
     })
     return seed
 
@@ -780,6 +1093,10 @@ def install_make_story_tuning(server):
                 "event": seed["event"],
                 "twist": seed["twist"],
                 "pattern": seed["pattern"]["name"],
+                "narrativeFrame": seed.get("_frame", {}).get("id", ""),
+                "visualProfile": seed.get("_visual_profile", "natural Thai horror realism"),
+                "visualNonce": seed.get("_visual_nonce", f"{random.getrandbits(64):016x}"),
+                "openingMode": seed.get("_opening_mode", "location_hook"),
             },
             "targetSeconds": target_seconds,
             "scenes": scenes,
@@ -862,9 +1179,9 @@ def install_image_stability_tuning(server):
         else:
             visual = original_scene_visual_detail(seed, line, number)
         stability = (
-            "medium or wide Thai horror film shot, location and forbidden object dominate, "
-            "one adult person at most, person seen from behind or in partial shadow, "
-            "faces small and not close to camera, hands mostly hidden, realistic body proportions"
+            "follow the camera angle and composition specified for this scene, location and story action dominate, "
+            "one adult person at most unless the scene explicitly says none, use profile or three-quarter faces when a person appears, "
+            "keep the specified face angle and action, hands mostly hidden, realistic body proportions"
         )
         return f"{visual}, {stability}"
 
@@ -872,14 +1189,17 @@ def install_image_stability_tuning(server):
         if scene.get("imagePrompt"):
             width, height = size
             aspect = "vertical 9:16 composition, 1080x1920" if height > width else "wide horizontal 16:9 composition, 1920x1080"
+            seed = story.get("seed", {})
             return " ".join([
                 "Photorealistic Thai supernatural horror movie still.",
                 aspect + ".",
                 "Depict this exact scene only:", scene["imagePrompt"] + ".",
+                f"Story-specific visual language: {seed.get('visualProfile', 'natural Thai horror realism')}.",
                 "Real Thai horror film frame, natural colors, restrained practical lighting, realistic adult body proportions.",
                 "Keep the exact location, object, action and character count from the scene description.",
+                "Honor the specified lens, viewpoint, face angle and subject action exactly.",
                 "No children, no unrelated people, no duplicate people, no unrelated house or hospital, no readable writing.",
-                "No text, subtitles, letters, numbers, watermark, logo, cartoon, anime, distorted faces or deformed bodies.",
+                "One continuous image only, no collage. No text, subtitles, letters, numbers, watermark, logo, cartoon, anime, distorted faces or deformed bodies.",
             ])
         prompt = original_ai_image_prompt(scene, story, size)
         return " ".join([
