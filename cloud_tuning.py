@@ -1,5 +1,7 @@
+import asyncio
 import random
 import re
+import time
 
 
 THAI_NAMES = [
@@ -19,23 +21,65 @@ def clean_story_line(line, seed):
     return replace_hero_word(line, seed.get("name") or "นนท์")
 
 
+_LAST_EDGE_REQUEST = 0.0
+
+
+def edge_text_chunks(text, max_chars=180):
+    remaining = " ".join(text.split()).strip()
+    chunks = []
+    while remaining:
+        if len(remaining) <= max_chars:
+            chunks.append(remaining)
+            break
+        cut = max(remaining.rfind(mark, 0, max_chars + 1) for mark in (" ", ",", ".", "!", "?", "…", "ๆ", "ฯ"))
+        if cut < max_chars // 2:
+            cut = max_chars
+        chunks.append(remaining[:cut].strip())
+        remaining = remaining[cut:].strip()
+    return [chunk for chunk in chunks if chunk]
+
+
 async def scary_female_edge_tts(text, output):
+    global _LAST_EDGE_REQUEST
     try:
         import edge_tts
     except Exception as error:
         raise RuntimeError("ไม่พบ edge-tts สำหรับรันบนคลาวด์ ติดตั้ง requirements.txt ให้ครบก่อน") from error
 
-    voices = ["th-TH-PremwadeeNeural", "th-TH-AcharaNeural"]
+    voice = "th-TH-PremwadeeNeural"
+    parts = []
     last_error = None
-    for voice in voices:
-        try:
-            communicate = edge_tts.Communicate(text, voice=voice, rate="-12%", pitch="-8Hz")
-            await communicate.save(str(output))
-            if output.exists() and output.stat().st_size > 12000:
-                return
-        except Exception as error:
-            last_error = error
-    raise RuntimeError(f"สร้างเสียงพากย์บนคลาวด์ไม่สำเร็จ: {last_error}")
+    try:
+        for index, chunk in enumerate(edge_text_chunks(text), start=1):
+            part = output.with_name(f"{output.stem}-edge-{index:02d}.mp3")
+            parts.append(part)
+            for attempt in range(4):
+                try:
+                    spacing = 5.0 - (time.monotonic() - _LAST_EDGE_REQUEST)
+                    if spacing > 0:
+                        await asyncio.sleep(spacing)
+                    part.unlink(missing_ok=True)
+                    communicate = edge_tts.Communicate(chunk, voice=voice, rate="-9%", pitch="-5Hz")
+                    _LAST_EDGE_REQUEST = time.monotonic()
+                    await communicate.save(str(part))
+                    if part.exists() and part.stat().st_size > 2500:
+                        break
+                except Exception as error:
+                    last_error = error
+                await asyncio.sleep(5.0 * (attempt + 1))
+            else:
+                raise RuntimeError(f"สร้างเสียงพากย์ช่วงที่ {index} ไม่สำเร็จ: {last_error}")
+
+        output.unlink(missing_ok=True)
+        with output.open("wb") as combined:
+            for part in parts:
+                combined.write(part.read_bytes())
+        if output.exists() and output.stat().st_size > 12000:
+            return
+        raise RuntimeError("ไฟล์เสียงที่รวมแล้วสั้นหรือเสียผิดปกติ")
+    finally:
+        for part in parts:
+            part.unlink(missing_ok=True)
 
 
 def install(server):
