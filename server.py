@@ -1278,6 +1278,28 @@ def image_looks_bad(image):
     return False
 
 
+def image_difference_hash(image):
+    sample = image.convert("L").resize((9, 8), Image.Resampling.BILINEAR)
+    pixels = list(sample.getdata())
+    fingerprint = 0
+    for row in range(8):
+        offset = row * 9
+        for column in range(8):
+            fingerprint = (fingerprint << 1) | int(pixels[offset + column] > pixels[offset + column + 1])
+    return fingerprint
+
+
+def register_story_image(image, story, minimum_distance=8):
+    fingerprint = image_difference_hash(image)
+    previous = story.setdefault("_imageFingerprints", [])
+    for old_fingerprint in previous:
+        distance = bin(fingerprint ^ old_fingerprint).count("1")
+        if distance < minimum_distance:
+            return False
+    previous.append(fingerprint)
+    return True
+
+
 def save_previous_background(previous_path, path, size):
     if not previous_path or not Path(previous_path).exists():
         return False
@@ -1292,10 +1314,11 @@ def save_previous_background(previous_path, path, size):
 
 def download_ai_background(path, scene, story, size):
     prompt = ai_image_prompt(scene, story, size)
-    seed_text = f"{story['title']}|{scene['number']}|{scene['narration']}"
+    visual_nonce = story.get("seed", {}).get("visualNonce", "")
+    seed_text = f"{visual_nonce}|{story['title']}|{scene['number']}|{scene['narration']}|{scene.get('visual', '')}"
     base_seed = int(hashlib.sha256(seed_text.encode("utf-8")).hexdigest()[:12], 16) % 999999999
     url = "https://image.pollinations.ai/prompt/" + urllib.parse.quote(prompt, safe="")
-    for attempt in range(4):
+    for attempt in range(5):
         params = urllib.parse.urlencode({
             "width": size[0],
             "height": size[1],
@@ -1318,6 +1341,8 @@ def download_ai_background(path, scene, story, size):
             image = ImageOps.fit(image, size, method=Image.Resampling.LANCZOS, centering=(0.5, 0.5))
             if image_looks_bad(image):
                 continue
+            if not register_story_image(image, story):
+                continue
             image = ImageEnhance.Contrast(image).enhance(1.10)
             image = ImageEnhance.Color(image).enhance(0.86)
             image = ImageEnhance.Sharpness(image).enhance(1.08)
@@ -1331,8 +1356,6 @@ def download_ai_background(path, scene, story, size):
 def create_background(path, scene, story, size, previous_path=None):
     if download_ai_background(path, scene, story, size):
         return "ai"
-    if save_previous_background(previous_path, path, size):
-        return "previous"
     draw_horror_background(path, scene, story, size)
     return "fallback"
 
@@ -1633,22 +1656,58 @@ def render_motion_video(base_path, output_path, size, duration, seed_text, fps=3
     ])
 
 
-def say_chunks(text, max_chars=72):
+def say_chunks(text, max_chars=30):
     remaining = " ".join(text.split()).strip()
     chunks = []
     while remaining:
         if len(remaining) <= max_chars:
             chunks.append(remaining)
             break
-        cut = max(
-            remaining.rfind(mark, 0, max_chars + 1)
-            for mark in (" ", ",", "…", "ๆ")
-        )
+        cut = remaining.rfind(" ", 0, max_chars + 1)
+        if cut < max_chars // 2:
+            cut = max(
+                remaining.rfind(mark, 0, max_chars + 1)
+                for mark in (",", ".", "!", "?", ":", ";", "…", "ๆ", "ฯ", "。")
+            )
+        if cut < max_chars // 2:
+            thai_markers = (
+                " แต่", " แล้ว", " เพราะ", " ก่อน", " หลัง",
+                " ตอน", " พอ", " จน", " เมื่อ", " หรือ", " และ", " ของ", " จาก",
+                " ให้", " ไป", " มา", " อยู่", " ว่า", " ซึ่ง", " แค่", " เพียง",
+                " กลับ", " เริ่ม", " ยัง", " เหมือน", " ทั้งที่", " หลังจาก", " ระหว่าง"
+            )
+            cut = max(remaining.rfind(marker, 0, max_chars + 1) for marker in thai_markers)
         if cut < max_chars // 2:
             cut = max_chars
         chunks.append(remaining[:cut].strip())
         remaining = remaining[cut:].strip()
     return [chunk for chunk in chunks if chunk]
+
+
+def speak_chunk_with_fallback(text, output, voices, max_chars=72):
+    for voice in voices:
+        output.unlink(missing_ok=True)
+        run([SAY, "-v", voice, "-r", "128", "-o", str(output), text])
+        if output.exists() and output.stat().st_size > 1200:
+            return [output]
+
+    if len(text) <= 18:
+        return []
+
+    smaller_max = max(18, min(max_chars - 12, len(text) // 2))
+    subchunks = say_chunks(text, max_chars=smaller_max)
+    if len(subchunks) <= 1:
+        midpoint = max(1, len(text) // 2)
+        subchunks = [text[:midpoint].strip(), text[midpoint:].strip()]
+
+    generated = []
+    for index, chunk in enumerate([part for part in subchunks if part], start=1):
+        subpart = output.with_name(f"{output.stem}-sub-{index:02d}.aiff")
+        parts = speak_chunk_with_fallback(chunk, subpart, voices, max_chars=smaller_max)
+        if not parts:
+            return []
+        generated.extend(parts)
+    return generated
 
 
 def make_narration(text, output):
@@ -1659,20 +1718,16 @@ def make_narration(text, output):
         # Rendering short phrases independently keeps local fallback narration reliable.
         for index, chunk in enumerate(say_chunks(text), start=1):
             part = output.with_name(f"{output.stem}-part-{index:02d}.aiff")
-            for voice in (VOICE, "Kanya"):
-                part.unlink(missing_ok=True)
-                run([SAY, "-v", voice, "-r", "128", "-o", str(part), chunk])
-                if part.exists() and part.stat().st_size > 12000:
-                    generated_parts.append(part)
-                    break
-            else:
+            parts = speak_chunk_with_fallback(chunk, part, (VOICE, "Kanya"))
+            if not parts:
                 raise RuntimeError("สร้างเสียงพากย์ไม่สำเร็จ ไฟล์เสียงที่ระบบได้กลับมาว่างหรือเสีย")
+            generated_parts.extend(parts)
 
         if len(generated_parts) == 1:
             raw_output = generated_parts[0]
         else:
             part_list = output.with_name(f"{output.stem}-parts.txt")
-            part_list.write_text("".join(f"file '{part}'\n" for part in generated_parts), encoding="utf-8")
+            part_list.write_text("".join(f"file '{part.resolve()}'\n" for part in generated_parts), encoding="utf-8")
             run([
                 FFMPEG, "-y", "-f", "concat", "-safe", "0", "-i", str(part_list),
                 "-c:a", "pcm_s16be", str(raw_output),
@@ -1763,23 +1818,20 @@ def render_video(payload, avoid=None, batch_index=None):
     story["plannedSeconds"] = round(total_duration, 1)
 
     segments = []
-    last_good_background = work / "last-good-background.jpg"
     for scene, audio_path, duration in zip(story["scenes"], audios, durations):
         base_path = work / f"base-{scene['number']:02d}.jpg"
         motion_path = work / f"motion-{scene['number']:02d}.mp4"
         overlay_path = work / f"overlay-{scene['number']:02d}.png"
         video_path = work / f"segment-{scene['number']:02d}.mp4"
 
-        background_source = create_background(base_path, scene, story, size, last_good_background)
-        if background_source == "ai":
-            shutil.copy2(base_path, last_good_background)
+        create_background(base_path, scene, story, size)
 
         render_motion_video(
             base_path,
             motion_path,
             size,
             duration,
-            f"{story['title']}:{scene['number']}",
+            f"{story['title']}:{story.get('seed', {}).get('visualNonce', '')}:{scene['number']}",
             fps=fps,
             preset=motion_preset,
             crf=segment_crf,
@@ -1864,16 +1916,21 @@ def render_video(payload, avoid=None, batch_index=None):
     ])
 
     story["targetSeconds"] = round(ffprobe_duration(output), 1)
+    story.pop("_imageFingerprints", None)
     return story, file_name
 
 
 def render_video_batch(payload):
     count = max(1, min(2, int(payload.get("count", 1) or 1)))
     results = []
+    recent = payload.get("avoidRecent") or {}
     avoid = {
-        "titles": set(),
-        "places": set(),
-        "patterns": set(),
+        "titles": set(recent.get("titles", [])),
+        "places": set(recent.get("places", [])),
+        "patterns": set(recent.get("patterns", [])),
+        "frames": set(recent.get("frames", [])),
+        "profiles": set(recent.get("profiles", [])),
+        "openingModes": set(recent.get("openingModes", [])),
     }
     for index in range(1, count + 1):
         story, file_name = render_video(payload, avoid=avoid, batch_index=index if count > 1 else None)
@@ -1881,6 +1938,9 @@ def render_video_batch(payload):
         avoid["titles"].add(story.get("title", ""))
         avoid["places"].add(seed.get("placeTitle", ""))
         avoid["patterns"].add(seed.get("pattern", ""))
+        avoid["frames"].add(seed.get("narrativeFrame", ""))
+        avoid["profiles"].add(seed.get("visualProfile", ""))
+        avoid["openingModes"].add(seed.get("openingMode", ""))
         results.append({
             "fileName": file_name,
             "videoUrl": f"/renders/{file_name}",
