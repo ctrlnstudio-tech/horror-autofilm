@@ -1811,7 +1811,7 @@ async def _make_narration_edge_tts(text, output):
     last_error = None
     for voice in voices:
         try:
-            communicate = edge_tts.Communicate(text, voice=voice, rate="-8%", pitch="-2Hz")
+            communicate = edge_tts.Communicate(text, voice=voice, rate="-13%", pitch="-2Hz")
             await communicate.save(str(output))
             if output.exists() and output.stat().st_size > 12000:
                 return
@@ -1931,7 +1931,7 @@ def render_video(payload, avoid=None, batch_index=None):
     music = work / "horror-music.aac"
     sfx = work / "horror-sfx.aac"
     fade_out = max(0, total_duration - 3)
-    expression = "0.172*sin(2*PI*43*t)+0.104*sin(2*PI*69*t)+0.068*sin(2*PI*(94+7*sin(2*PI*0.045*t))*t)+0.034*sin(2*PI*(156+13*sin(2*PI*0.031*t))*t)"
+    expression = "0.190*sin(2*PI*43*t)+0.112*sin(2*PI*64.5*t)+0.076*sin(2*PI*86*t)+0.060*sin(2*PI*(130.81+16*sin(2*PI*0.03125*t))*t)*(0.45+0.55*sin(2*PI*0.19*t)*sin(2*PI*0.19*t))+0.036*sin(2*PI*293.66*t)*(0.5+0.5*sin(2*PI*0.07*t))"
     run([
         FFMPEG, "-y", "-f", "lavfi", "-i",
         f"aevalsrc={expression}:s=44100:d={total_duration:.3f}",
@@ -1960,7 +1960,7 @@ def render_video(payload, avoid=None, batch_index=None):
         "-i", str(sfx),
         "-filter_complex",
         "[1:a]volume=1.58,asplit=3[a_voice][voice_sc_music][voice_sc_sfx];"
-        "[2:a]volume=1.72[a_music_raw];"
+        "[2:a]volume=1.92[a_music_raw];"
         "[a_music_raw][voice_sc_music]sidechaincompress=threshold=0.058:ratio=2.2:attack=18:release=520:makeup=1.12[a_music];"
         "[3:a]volume=0.74[a_sfx_raw];"
         "[a_sfx_raw][voice_sc_sfx]sidechaincompress=threshold=0.042:ratio=4.8:attack=8:release=280:makeup=1[a_sfx];"
