@@ -46,7 +46,10 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg fonts-noto-core
+          sudo apt-get install -y ffmpeg fonts-noto-core fonts-thai-tlwg fontconfig libraqm0
+          fc-cache -f
+          fc-match "Noto Sans Thai"
+          google-chrome --version
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
