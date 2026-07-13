@@ -47,7 +47,8 @@ FONT_FALLBACKS = [
     Path("/usr/share/fonts/truetype/tlwg/Garuda.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 ]
-SHORT_MAX_SECONDS = 160.0
+SHORT_MAX_SECONDS = 179.0
+NARRATION_SLOWDOWN = 1.5
 VOICE = "Kanya (Enhanced)"
 THAI_NAMES = [
     "นนท์", "ตั้ม", "วิน", "บาส", "ก้อง", "พีท", "อาร์ม", "เต้", "มอส", "เคน",
@@ -1604,8 +1605,22 @@ def render_overlay_frame(output_path, scene, story, size, work, subtitle_text=No
             html_path.resolve().as_uri(),
         ])
     except RuntimeError:
+        swift = shutil.which("swift")
+        swift_overlay = ROOT / "thai_overlay.swift"
+        if swift and swift_overlay.exists():
+            run([
+                swift,
+                str(swift_overlay),
+                str(width),
+                str(height),
+                str(output_path),
+                clean_render_text(story["title"]) if show_title else "",
+                subtitle,
+                "1" if is_vertical else "0",
+            ])
+            return
         if not features.check("raqm"):
-            raise RuntimeError("Chrome เรนเดอร์ซับไม่สำเร็จ และ Pillow ไม่มี RAQM ระบบหยุดเพื่อป้องกันตัวอักษรเพี้ยน")
+            raise RuntimeError("Chrome เรนเดอร์ซับไม่สำเร็จ และไม่มีตัวเรนเดอร์ภาษาไทยสำรอง")
         render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=subtitle_text, show_title=show_title)
 
 
@@ -1780,6 +1795,7 @@ def make_narration(text, output):
     run([
         FFMPEG, "-y", "-i", str(input_audio),
         "-af",
+        f"atempo={1.0 / NARRATION_SLOWDOWN:.6f},"
         "highpass=f=75,lowpass=f=8200,"
         "equalizer=f=180:t=q:w=1.0:g=1.0,"
         "equalizer=f=280:t=q:w=1.1:g=0.8,"
@@ -1871,9 +1887,22 @@ def render_video(payload, avoid=None, batch_index=None):
 
     total_duration = sum(durations)
     if mode == "short" and total_duration > SHORT_MAX_SECONDS:
-        raise RuntimeError(
-            f"เสียงเล่ายาว {total_duration:.1f} วินาที เกินขีดจำกัด Shorts {SHORT_MAX_SECONDS:.0f} วินาที ระบบหยุดก่อนอัปโหลด"
-        )
+        # Preserve the requested 1.5x storytelling pace whenever possible. For
+        # unusually long scripts, make only the minimum correction needed to
+        # remain safely below YouTube's three-minute Shorts boundary.
+        correction = total_duration / (SHORT_MAX_SECONDS - 0.5)
+        corrected_durations = []
+        for audio_path in audios:
+            corrected = audio_path.with_name(f"{audio_path.stem}-short-safe.aiff")
+            run([
+                FFMPEG, "-y", "-i", str(audio_path),
+                "-af", f"atempo={correction:.6f}",
+                "-c:a", "pcm_s16be", str(corrected),
+            ])
+            corrected.replace(audio_path)
+            corrected_durations.append(ffprobe_duration(audio_path))
+        durations = corrected_durations
+        total_duration = sum(durations)
     is_short = mode == "short"
     render_format = "short" if is_short else "long"
     size = (1080, 1920) if is_short else (1600, 900)
