@@ -65,6 +65,7 @@ def make_recent_avoidance(history):
         "frames": recent_unique(history, "narrativeFrame", 4),
         "profiles": recent_unique(history, "visualProfile", 4),
         "openingModes": recent_unique(history, "openingMode", 3),
+        "paths": recent_unique(history, "actionPath", 10),
     }
 
 
@@ -80,6 +81,7 @@ def save_generation_history(history, videos):
             "narrativeFrame": seed.get("narrativeFrame", ""),
             "visualProfile": seed.get("visualProfile", ""),
             "openingMode": seed.get("openingMode", ""),
+            "actionPath": seed.get("actionPath", ""),
             "visualNonce": seed.get("visualNonce", ""),
         })
     payload = {"entries": history[-80:]}
