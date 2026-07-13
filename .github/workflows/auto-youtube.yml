@@ -8,12 +8,8 @@ on:
     paths:
       - .github/run-now.txt
   schedule:
-    # GitHub cron uses UTC. Primary runs: 09:05 and 20:05 in Asia/Bangkok.
-    - cron: "5 2 * * *"
-    - cron: "5 13 * * *"
-    # Backup runs for GitHub schedule delays/skips. A cache lock prevents duplicate uploads per slot.
-    - cron: "25 2 * * *"
-    - cron: "25 13 * * *"
+    # GitHub cron uses UTC. 11:00 UTC is 18:00 in Asia/Bangkok.
+    - cron: "0 11 * * *"
 
 concurrency:
   group: horror-autofilm-upload
@@ -66,8 +62,7 @@ jobs:
               raise SystemExit
 
           bkk = datetime.now(timezone.utc) + timedelta(hours=7)
-          slot_hour = min((9, 20), key=lambda hour: abs((bkk.hour * 60 + bkk.minute) - (hour * 60 + 5)))
-          print(f"slot_id={bkk:%Y-%m-%d}-{slot_hour:02d}")
+          print(f"slot_id={bkk:%Y-%m-%d}-18")
           print("scheduled=true")
           PY
 
