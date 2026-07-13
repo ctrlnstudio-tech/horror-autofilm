@@ -1820,6 +1820,33 @@ async def _make_narration_edge_tts(text, output):
     raise RuntimeError(f"สร้างเสียงพากย์บนคลาวด์ไม่สำเร็จ: {last_error}")
 
 
+def horror_music_expression():
+    """Build one of several slow, dissonant horror music cues."""
+    music_presets = [
+        (36.71, 51.91, 293.66, 311.13, 415.30),
+        (41.20, 58.27, 329.63, 349.23, 466.16),
+        (43.65, 61.74, 261.63, 277.18, 392.00),
+        (32.70, 46.25, 246.94, 261.63, 369.99),
+    ]
+    root, tension, melody_a, melody_b, high_note = random.choice(music_presets)
+    slow_a = "*".join(["(0.5+0.5*cos(2*PI*0.125*t))"] * 7)
+    slow_b = "*".join(["(0.5-0.5*cos(2*PI*0.125*t))"] * 7)
+    distant = "*".join(["(0.5+0.5*cos(2*PI*0.0625*t))"] * 9)
+    low_hit = "*".join(["(0.5+0.5*cos(2*PI*0.25*t))"] * 12)
+    return "+".join([
+        f"0.112*sin(2*PI*{root}*t)",
+        f"0.082*sin(2*PI*{tension}*t)",
+        f"0.046*sin(2*PI*{root * 2}*t)",
+        f"0.046*sin(2*PI*({root * 3}+4*sin(2*PI*0.021*t))*t)",
+        f"0.118*sin(2*PI*{melody_a}*t)*{slow_a}",
+        f"0.047*sin(2*PI*{melody_a * 2.01}*t)*{slow_a}",
+        f"0.112*sin(2*PI*{melody_b}*t)*{slow_b}",
+        f"0.045*sin(2*PI*{melody_b * 2.02}*t)*{slow_b}",
+        f"0.072*sin(2*PI*{high_note}*t)*{distant}",
+        f"0.074*sin(2*PI*{root * 1.5}*t)*{low_hit}",
+    ])
+
+
 def render_video(payload, avoid=None, batch_index=None):
     mode = payload.get("mode") if payload.get("mode") in {"short", "long"} else "short"
     brief = payload.get("brief", "")
@@ -1931,11 +1958,15 @@ def render_video(payload, avoid=None, batch_index=None):
     music = work / "horror-music.aac"
     sfx = work / "horror-sfx.aac"
     fade_out = max(0, total_duration - 3)
-    expression = "0.190*sin(2*PI*43*t)+0.112*sin(2*PI*64.5*t)+0.076*sin(2*PI*86*t)+0.060*sin(2*PI*(130.81+16*sin(2*PI*0.03125*t))*t)*(0.45+0.55*sin(2*PI*0.19*t)*sin(2*PI*0.19*t))+0.036*sin(2*PI*293.66*t)*(0.5+0.5*sin(2*PI*0.07*t))"
+    # A slow dissonant score, not just a continuous ambient drone. Alternating
+    # bell-like notes and low impacts make the music perceptible under narration.
+    expression = horror_music_expression()
     run([
         FFMPEG, "-y", "-f", "lavfi", "-i",
         f"aevalsrc={expression}:s=44100:d={total_duration:.3f}",
-        "-af", f"highpass=f=28,lowpass=f=5200,afade=t=in:st=0:d=2,afade=t=out:st={fade_out:.3f}:d=3",
+        "-af", f"highpass=f=28,lowpass=f=5200,aecho=0.8:0.65:420|840:0.16|0.08,"
+        f"acompressor=threshold=-20dB:ratio=1.6:attack=20:release=280,"
+        f"afade=t=in:st=0:d=2,afade=t=out:st={fade_out:.3f}:d=3",
         "-c:a", "aac", "-b:a", "128k", str(music),
     ])
     sfx_expression = "0.040*sin(2*PI*31*t)+0.034*sin(2*PI*57*t)+0.048*sin(2*PI*(118+11*sin(2*PI*0.038*t))*t)"
