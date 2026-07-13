@@ -230,7 +230,7 @@ def main():
 
     if args.schedule:
         schedule_config = config.get("schedule", {})
-        time_values = args.schedule_times or schedule_config.get("times", ["06:00", "11:00", "18:00"])
+        time_values = args.schedule_times or schedule_config.get("times", ["18:00"])
         timezone_name = args.timezone or schedule_config.get("timezone", "Asia/Bangkok")
         run_schedule(upload_override, parse_schedule_times(time_values), timezone_name)
         return
