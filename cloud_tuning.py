@@ -46,28 +46,40 @@ async def scary_female_edge_tts(text, output):
     except Exception as error:
         raise RuntimeError("ไม่พบ edge-tts สำหรับรันบนคลาวด์ ติดตั้ง requirements.txt ให้ครบก่อน") from error
 
-    voice = "th-TH-PremwadeeNeural"
+    # Achara is clearer on short Thai narration phrases. Premwadee remains a
+    # same-gender fallback so one unavailable voice never changes the speaker.
+    voices = ("th-TH-AcharaNeural", "th-TH-PremwadeeNeural")
     parts = []
     last_error = None
     try:
         for index, chunk in enumerate(edge_text_chunks(text), start=1):
             part = output.with_name(f"{output.stem}-edge-{index:02d}.mp3")
             parts.append(part)
-            for attempt in range(4):
-                try:
-                    spacing = 5.0 - (time.monotonic() - _LAST_EDGE_REQUEST)
-                    if spacing > 0:
-                        await asyncio.sleep(spacing)
-                    part.unlink(missing_ok=True)
-                    communicate = edge_tts.Communicate(chunk, voice=voice, rate="-9%", pitch="-5Hz")
-                    _LAST_EDGE_REQUEST = time.monotonic()
-                    await communicate.save(str(part))
-                    if part.exists() and part.stat().st_size > 2500:
-                        break
-                except Exception as error:
-                    last_error = error
-                await asyncio.sleep(5.0 * (attempt + 1))
-            else:
+            generated = False
+            for voice in voices:
+                for attempt in range(3):
+                    try:
+                        spacing = 5.0 - (time.monotonic() - _LAST_EDGE_REQUEST)
+                        if spacing > 0:
+                            await asyncio.sleep(spacing)
+                        part.unlink(missing_ok=True)
+                        communicate = edge_tts.Communicate(
+                            chunk,
+                            voice=voice,
+                            rate="-8%",
+                            pitch="-2Hz",
+                        )
+                        _LAST_EDGE_REQUEST = time.monotonic()
+                        await communicate.save(str(part))
+                        if part.exists() and part.stat().st_size > 2500:
+                            generated = True
+                            break
+                    except Exception as error:
+                        last_error = error
+                    await asyncio.sleep(5.0 * (attempt + 1))
+                if generated:
+                    break
+            if not generated:
                 raise RuntimeError(f"สร้างเสียงพากย์ช่วงที่ {index} ไม่สำเร็จ: {last_error}")
 
         output.unlink(missing_ok=True)
@@ -987,21 +999,20 @@ def experience_scene_specs(seed):
 
     lines = [
         frame["opening"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
-        f"{frame['ordinary'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} ตอนนั้น{name}ยังคิดอยู่เลยว่าเดี๋ยวทำเสร็จก็คงกลับ ไม่มีอะไรต้องคิดมาก",
-        f"{frame['local'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} ตอนที่{name}มาเล่า เขาบอกว่าคำเตือนนี้แหละที่ย้อนกลับมาดังอยู่ในหัวตลอดทั้งคืน",
-        f"พอ{name}เข้าไปถึง{place_short}จริง ๆ อย่างแรกที่รู้สึกได้เลยคือมันเงียบผิดปกติ เงียบจน{sensory}เด่นขึ้นมาชัด ๆ เหมือนทั้งที่นั้นมีแค่เขาอยู่คนเดียว",
-        f"พอเดินเข้าไปลึกอีกหน่อย ตรงจุดที่ควรจะเจอ{object_short} กลับมี{clue}โผล่อยู่ก่อน เหมือนมีใครทิ้งไว้ให้เห็นจงใจมากกว่าจะเป็นเรื่องบังเอิญ",
-        f"ตอนนั้น{name}ยังพยายามคิดเข้าข้างตัวเองอยู่ ว่าอาจมีคนงานคนอื่นผ่านมา หรือใครสักคนแกล้งไว้ แต่ยิ่งอยู่ใน{place_short}นาน ความรู้สึกเหมือนมีสายตาคอยมองก็ยิ่งชัดขึ้น",
-        f"{motif['manifestation'].format(place=place_short, object=object_short, name=name)} จุดนี้เองที่{name}เริ่มรู้ว่าถ้าจะถอย ก็คงต้องถอยตอนนี้",
-        f"{frame['response'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} แต่ปัญหาคือยิ่งพยายามทำเหมือนไม่มีอะไร ทุกอย่างรอบตัวก็ยิ่งแปลกขึ้นเรื่อย ๆ",
-        f"พอ{name}เผลอหันไปมองกระจกหรือหน้าต่างอีกด้าน {ghost}กลับไปอยู่ตรงนั้น ทั้งที่ในห้องจริงยังว่างเปล่าอยู่เหมือนเดิม เขาบอกว่าตอนนั้นทั้งตัวชาไปหมด",
-        f"{name}เลยรีบวาง{object_short}คืนที่เดิมแล้วหันหลังจะออกจาก{place_short} แต่ทางที่เพิ่งเดินเข้ามากลับพาเขาวนกลับมาจุดเดิม เหมือนสถานที่นั้นไม่ยอมปล่อยให้ออกไปง่าย ๆ",
-        f"ยิ่งวนกลับมากี่ครั้ง ไฟยิ่งดับทีละดวง และ{object_short}ก็ยิ่งมาอยู่ใกล้มือของ{name}มากขึ้น ทั้งที่เขาแทบไม่ได้แตะมันเลย",
-        f"ตอน{name}โทรถาม{witness}อีกครั้ง อีกฝ่ายยอมพูดแค่ว่าเคยมีคนเจอเหตุคล้ายกันที่{place_short} แล้วคืนนั้นคนคนนั้นก็ไม่กลับออกมาอีกหลังพยายามเอา{object_short}ออกไป ก่อนจะวางสายไปดื้อ ๆ",
-        f"{motif['reveal'].format(place=place_short, object=object_short, name=name)} ตอนเล่าถึงตรงนี้{name}เงียบไปพักใหญ่ เหมือนยังไม่แน่ใจว่าควรพูดออกมาดีไหม",
-        f"สุดท้าย{name}ก็รวบรวมสติ ทำตามคำเตือนที่ว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้จะได้ยินเสียงเรียกชื่อดังตามหลังมาติด ๆ",
-        f"เช้าวันถัดมา {witness}กลับไปดูที่{place_short}แล้วพบ{object_short}อยู่ที่เดิม แต่ข้าง ๆ มันมีของใช้ของ{name}เพิ่มมาอีกชิ้นหนึ่ง ทั้งที่ไม่มีเหตุผลเลยว่าของชิ้นนั้นจะไปอยู่ตรงนั้นได้ยังไง",
-        f"{frame['ending'].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule)} และ{name}ก็ไม่เคยเล่าต่อว่าหลังจากเดินออกมาแล้ว เขาได้ยินอะไรตามหลังมาอีกหรือเปล่า",
+        frame["ordinary"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
+        frame["local"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
+        f"พอ{name}เข้าไปถึง{place_short} ที่นั่นเงียบผิดปกติ จน{sensory}ชัดขึ้นเหมือนมีใครคอยฟังทุกก้าว",
+        f"ใกล้{object_short}มี{clue} เหมือนถูกวางไว้ให้{name}เห็นโดยตั้งใจ",
+        f"{motif['manifestation'].format(place=place_short, object=object_short, name=name)} คราวนี้{name}รู้แล้วว่าไม่ใช่เรื่องแกล้งกัน",
+        frame["response"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
+        f"เมื่อ{name}มองกระจกอีกด้าน {ghost}ยืนอยู่ในเงาสะท้อน ทั้งที่ตรงนั้นไม่มีใคร",
+        f"{name}วาง{object_short}แล้วรีบออก แต่ทางเดิมกลับพาวนมาที่จุดเดิมทุกครั้ง",
+        f"ทุกครั้งที่วนกลับมา ไฟดับเพิ่มหนึ่งดวง และ{object_short}ขยับเข้ามาใกล้มือเอง",
+        f"{witness}ยอมบอกว่าเคยมีคนพยายามเอา{object_short}ออกจาก{place_short} แล้วคนนั้นไม่เคยกลับมา",
+        f"{motif['reveal'].format(place=place_short, object=object_short, name=name)} นั่นคือเหตุผลที่มันเลือก{name}",
+        f"{name}ทำตามคำเตือนว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้เสียงเรียกชื่อจะดังอยู่ข้างหลัง",
+        f"เช้าวันต่อมา {witness}พบ{object_short}อยู่ที่เดิม แต่ข้างกันมีของใช้ของ{name}เพิ่มมาอีกชิ้น",
+        frame["ending"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
     ]
     visuals = build_experience_visuals(seed)
     specs = [
@@ -1097,7 +1108,7 @@ def install_story_name_tuning(server):
 def install_make_story_tuning(server):
     def tuned_make_story(mode, brief, avoid=None):
         seed = server.make_seed(brief, avoid=avoid)
-        target_seconds = 174 if mode == "short" else 420
+        target_seconds = 148 if mode == "short" else 420
         if seed.get("_experience"):
             specs = experience_scene_specs(seed)
             duration = max(6, round(target_seconds / len(specs)))
