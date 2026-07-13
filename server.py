@@ -1,7 +1,7 @@
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from io import BytesIO
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont, ImageOps, features
 import asyncio
 import hashlib
 import html
@@ -16,6 +16,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+import unicodedata
 
 ROOT = Path(__file__).resolve().parent
 RENDERS = ROOT / "renders"
@@ -30,14 +31,23 @@ FFMPEG = shutil.which("ffmpeg") or (imageio_ffmpeg.get_ffmpeg_exe() if imageio_f
 FFPROBE = shutil.which("ffprobe") or FFMPEG
 SAY = shutil.which("say") or "/usr/bin/say"
 EDGE_TTS = shutil.which("edge-tts") or shutil.which("python3")
-CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+CHROME_CANDIDATES = [
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    shutil.which("google-chrome"),
+    shutil.which("google-chrome-stable"),
+    shutil.which("chromium"),
+    shutil.which("chromium-browser"),
+]
+CHROME = next((Path(path) for path in CHROME_CANDIDATES if path and Path(path).exists()), Path("/__missing_chrome__"))
 FONT_PATH = Path("/System/Library/Fonts/Supplemental/Thonburi.ttc")
 FONT_FALLBACKS = [
     FONT_PATH,
     Path("/usr/share/fonts/truetype/noto/NotoSansThai-Regular.ttf"),
     Path("/usr/share/fonts/truetype/noto/NotoSansThai-Bold.ttf"),
+    Path("/usr/share/fonts/truetype/tlwg/Garuda.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 ]
+SHORT_MAX_SECONDS = 160.0
 VOICE = "Kanya (Enhanced)"
 THAI_NAMES = [
     "นนท์", "ตั้ม", "วิน", "บาส", "ก้อง", "พีท", "อาร์ม", "เต้", "มอส", "เคน",
@@ -547,7 +557,8 @@ def load_font(size):
     for path in FONT_FALLBACKS:
         if path.exists():
             try:
-                return ImageFont.truetype(str(path), size, index=0)
+                layout = ImageFont.Layout.RAQM if features.check("raqm") else ImageFont.Layout.BASIC
+                return ImageFont.truetype(str(path), size, index=0, layout_engine=layout)
             except TypeError:
                 return ImageFont.truetype(str(path), size)
     return ImageFont.load_default()
@@ -568,6 +579,25 @@ def wrap_text(draw, text, font, max_width):
     if current:
         lines.append(current)
     return lines
+
+
+def clean_render_text(text):
+    """Keep Thai captions printable and remove invisible/unsupported glyphs."""
+    text = unicodedata.normalize("NFC", str(text or ""))
+    text = text.replace("\ufffd", "").replace("□", "").replace("…", "...")
+    allowed_punctuation = " .,!?;:'\"()[]-/"
+    cleaned = []
+    for char in text:
+        codepoint = ord(char)
+        if "\u0e00" <= char <= "\u0e7f":
+            cleaned.append(char)
+        elif char.isascii() and (char.isalnum() or char in allowed_punctuation):
+            cleaned.append(char)
+        elif char.isspace():
+            cleaned.append(" ")
+        elif unicodedata.category(char).startswith("C"):
+            continue
+    return " ".join("".join(cleaned).split()).strip()
 
 
 def draw_centered_lines(draw, lines, y, font, fill, stroke_width=2, stroke_fill=(0, 0, 0), spacing=10, width=1080):
@@ -987,7 +1017,7 @@ def scene_image_directives(scene, story):
 def make_story(mode, brief, avoid=None):
     seed = make_seed(brief, avoid=avoid)
     lines = story_lines(seed, mode)
-    target_seconds = 174 if mode == "short" else 420
+    target_seconds = 148 if mode == "short" else 420
     duration = max(6, round(target_seconds / len(lines)))
     scenes = []
     for index, line in enumerate(lines, start=1):
@@ -1363,7 +1393,7 @@ def create_background(path, scene, story, size, previous_path=None):
 def subtitle_chunks(text, max_chars):
     chunks = []
     current = ""
-    normalized = " ".join(text.replace("...", "…").split())
+    normalized = clean_render_text(text)
     for word in normalized.split(" "):
         candidate = f"{current} {word}".strip()
         if len(candidate) <= max_chars or not current:
@@ -1390,8 +1420,8 @@ def render_text_frame(base_path, output_path, scene, story, size, work, subtitle
     is_vertical = height > width
     title_size = 58 if is_vertical else 48
     sub_size = 42 if is_vertical else 34
-    title_html = f'<div class="title">{html.escape(story["title"])}</div>' if show_title else ""
-    subtitle = subtitle_text if subtitle_text is not None else scene["narration"]
+    title_html = f'<div class="title">{html.escape(clean_render_text(story["title"]))}</div>' if show_title else ""
+    subtitle = clean_render_text(subtitle_text if subtitle_text is not None else scene["narration"])
     html_path = work / f"frame-{scene['number']:02d}.html"
     html_path.write_text(f"""<!doctype html>
 <meta charset="utf-8">
@@ -1402,7 +1432,7 @@ def render_text_frame(base_path, output_path, scene, story, size, work, subtitle
     height: {height}px;
     overflow: hidden;
     background: #050807;
-    font-family: "Thonburi", "Sarabun", sans-serif;
+    font-family: "Noto Sans Thai", "Noto Sans Thai Looped", "Thonburi", "Garuda", sans-serif;
   }}
   .bg {{
     position: absolute;
@@ -1484,8 +1514,8 @@ def render_overlay_frame(output_path, scene, story, size, work, subtitle_text=No
     is_vertical = height > width
     title_size = 58 if is_vertical else 48
     sub_size = 42 if is_vertical else 34
-    title_html = f'<div class="title">{html.escape(story["title"])}</div>' if show_title else ""
-    subtitle = subtitle_text if subtitle_text is not None else scene["narration"]
+    title_html = f'<div class="title">{html.escape(clean_render_text(story["title"]))}</div>' if show_title else ""
+    subtitle = clean_render_text(subtitle_text if subtitle_text is not None else scene["narration"])
     html_path = work / f"overlay-{scene['number']:02d}.html"
     html_path.write_text(f"""<!doctype html>
 <meta charset="utf-8">
@@ -1496,7 +1526,7 @@ def render_overlay_frame(output_path, scene, story, size, work, subtitle_text=No
     height: {height}px;
     overflow: hidden;
     background: transparent;
-    font-family: "Thonburi", "Sarabun", sans-serif;
+    font-family: "Noto Sans Thai", "Noto Sans Thai Looped", "Thonburi", "Garuda", sans-serif;
   }}
   .wrap {{
     position: relative;
@@ -1556,20 +1586,27 @@ def render_overlay_frame(output_path, scene, story, size, work, subtitle_text=No
 """, encoding="utf-8")
 
     if not CHROME.exists():
+        if not features.check("raqm"):
+            raise RuntimeError("ไม่พบ Chrome หรือ RAQM สำหรับเรนเดอร์ซับไทย ระบบหยุดเพื่อป้องกันตัวอักษรเพี้ยน")
         render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=subtitle_text, show_title=show_title)
         return
 
-    run([
-        str(CHROME),
-        "--headless=new",
-        "--disable-gpu",
-        "--no-sandbox",
-        "--allow-file-access-from-files",
-        "--default-background-color=00000000",
-        f"--screenshot={output_path}",
-        f"--window-size={width},{height}",
-        html_path.resolve().as_uri(),
-    ])
+    try:
+        run([
+            str(CHROME),
+            "--headless=new",
+            "--disable-gpu",
+            "--no-sandbox",
+            "--allow-file-access-from-files",
+            "--default-background-color=00000000",
+            f"--screenshot={output_path}",
+            f"--window-size={width},{height}",
+            html_path.resolve().as_uri(),
+        ])
+    except RuntimeError:
+        if not features.check("raqm"):
+            raise RuntimeError("Chrome เรนเดอร์ซับไม่สำเร็จ และ Pillow ไม่มี RAQM ระบบหยุดเพื่อป้องกันตัวอักษรเพี้ยน")
+        render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=subtitle_text, show_title=show_title)
 
 
 def render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=None, show_title=False):
@@ -1577,7 +1614,7 @@ def render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=None
     is_vertical = height > width
     image = Image.new("RGBA", size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
-    subtitle = subtitle_text if subtitle_text is not None else scene["narration"]
+    subtitle = clean_render_text(subtitle_text if subtitle_text is not None else scene["narration"])
 
     shade = Image.new("RGBA", size, (0, 0, 0, 0))
     shade_draw = ImageDraw.Draw(shade)
@@ -1588,7 +1625,7 @@ def render_pil_overlay_frame(output_path, scene, story, size, subtitle_text=None
 
     if show_title:
         title_font = load_font(58 if is_vertical else 48)
-        title_lines = wrap_text(draw, story["title"], title_font, int(width * (0.78 if is_vertical else 0.66)))
+        title_lines = wrap_text(draw, clean_render_text(story["title"]), title_font, int(width * (0.78 if is_vertical else 0.66)))
         title_y = 185 if is_vertical else 74
         for line in title_lines[:3]:
             box = draw.textbbox((0, 0), line, font=title_font, stroke_width=3)
@@ -1743,12 +1780,12 @@ def make_narration(text, output):
     run([
         FFMPEG, "-y", "-i", str(input_audio),
         "-af",
-        "highpass=f=70,lowpass=f=6400,"
-        "equalizer=f=150:t=q:w=1.0:g=3.0,"
-        "equalizer=f=260:t=q:w=1.1:g=2.0,"
-        "equalizer=f=3300:t=q:w=1.2:g=-1.2,"
-        "acompressor=threshold=-20dB:ratio=2.2:attack=8:release=150,"
-        "volume=1.42",
+        "highpass=f=75,lowpass=f=8200,"
+        "equalizer=f=180:t=q:w=1.0:g=1.0,"
+        "equalizer=f=280:t=q:w=1.1:g=0.8,"
+        "equalizer=f=3200:t=q:w=1.1:g=1.6,"
+        "acompressor=threshold=-20dB:ratio=2.0:attack=8:release=150,"
+        "volume=1.36",
         str(output),
     ])
     if not output.exists() or output.stat().st_size < 12000:
@@ -1768,13 +1805,13 @@ async def _make_narration_edge_tts(text, output):
         ) from error
 
     voices = [
-        "th-TH-PremwadeeNeural",
         "th-TH-AcharaNeural",
+        "th-TH-PremwadeeNeural",
     ]
     last_error = None
     for voice in voices:
         try:
-            communicate = edge_tts.Communicate(text, voice=voice, rate="-12%", pitch="-8Hz")
+            communicate = edge_tts.Communicate(text, voice=voice, rate="-8%", pitch="-2Hz")
             await communicate.save(str(output))
             if output.exists() and output.stat().st_size > 12000:
                 return
@@ -1806,7 +1843,11 @@ def render_video(payload, avoid=None, batch_index=None):
         audios.append(audio_path)
 
     total_duration = sum(durations)
-    is_short = total_duration <= 180.0
+    if mode == "short" and total_duration > SHORT_MAX_SECONDS:
+        raise RuntimeError(
+            f"เสียงเล่ายาว {total_duration:.1f} วินาที เกินขีดจำกัด Shorts {SHORT_MAX_SECONDS:.0f} วินาที ระบบหยุดก่อนอัปโหลด"
+        )
+    is_short = mode == "short"
     render_format = "short" if is_short else "long"
     size = (1080, 1920) if is_short else (1600, 900)
     fps = 30 if is_short else 24
@@ -1821,7 +1862,6 @@ def render_video(payload, avoid=None, batch_index=None):
     for scene, audio_path, duration in zip(story["scenes"], audios, durations):
         base_path = work / f"base-{scene['number']:02d}.jpg"
         motion_path = work / f"motion-{scene['number']:02d}.mp4"
-        overlay_path = work / f"overlay-{scene['number']:02d}.png"
         video_path = work / f"segment-{scene['number']:02d}.mp4"
 
         create_background(base_path, scene, story, size)
@@ -1836,28 +1876,43 @@ def render_video(payload, avoid=None, batch_index=None):
             preset=motion_preset,
             crf=segment_crf,
         )
-        render_overlay_frame(
-            overlay_path,
-            scene,
-            story,
-            size,
-            work,
-            subtitle_text=scene["narration"],
-            show_title=scene["number"] == 1,
-        )
-        run([
-            FFMPEG, "-y",
-            "-i", str(motion_path),
-            "-loop", "1",
-            "-i", str(overlay_path),
-            "-filter_complex",
-            "[0:v][1:v]overlay=0:0:format=auto:shortest=1[vout]",
-            "-map", "[vout]",
-            "-an",
+        caption_parts = subtitle_chunks(scene["narration"], 34 if is_short else 54)
+        caption_times = subtitle_durations(caption_parts, duration)
+        overlay_paths = []
+        command = [FFMPEG, "-y", "-i", str(motion_path)]
+        for caption_index, caption in enumerate(caption_parts, 1):
+            overlay_path = work / f"overlay-{scene['number']:02d}-{caption_index:02d}.png"
+            render_overlay_frame(
+                overlay_path,
+                scene,
+                story,
+                size,
+                work,
+                subtitle_text=caption,
+                show_title=scene["number"] == 1 and caption_index == 1,
+            )
+            overlay_paths.append(overlay_path)
+            command.extend(["-loop", "1", "-i", str(overlay_path)])
+
+        filters = []
+        start = 0.0
+        previous = "0:v"
+        for caption_index, caption_duration in enumerate(caption_times, 1):
+            end = min(duration, start + caption_duration)
+            output_label = f"cap{caption_index}"
+            filters.append(
+                f"[{previous}][{caption_index}:v]overlay=0:0:format=auto:enable='between(t,{start:.3f},{end:.3f})'[{output_label}]"
+            )
+            previous = output_label
+            start = end
+        command.extend([
+            "-filter_complex", ";".join(filters),
+            "-map", f"[{previous}]", "-an", "-t", f"{duration:.3f}",
             "-c:v", "libx264", "-preset", segment_preset, "-crf", segment_crf, "-pix_fmt", "yuv420p",
             str(video_path),
         ])
-        for temp_path in (base_path, motion_path, overlay_path):
+        run(command)
+        for temp_path in (base_path, motion_path, *overlay_paths):
             temp_path.unlink(missing_ok=True)
         segments.append(video_path)
 
