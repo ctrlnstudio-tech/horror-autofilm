@@ -66,7 +66,7 @@ async def scary_female_edge_tts(text, output):
                         communicate = edge_tts.Communicate(
                             chunk,
                             voice=voice,
-                            rate="-8%",
+                            rate="-13%",
                             pitch="-2Hz",
                         )
                         _LAST_EDGE_REQUEST = time.monotonic()
@@ -680,6 +680,288 @@ REFERENCE_NARRATIVE_FRAMES = [
 ]
 
 
+# Distinct middle-act structures prevent every story from becoming the same
+# object-warning-reflection-loop sequence with only the place renamed.
+EXPERIENCE_ACTION_PATHS = [
+    {
+        "id": "evidence_trail",
+        "beats": [
+            "ใกล้{object}มี{clue} {name}จึงถ่ายรูปเก็บไว้ก่อนแตะอะไร",
+            "เมื่อเปิดรูปดู ร่องรอยในภาพกลับยาวไปถึงประตูอีกด้าน ทั้งที่พื้นจริงยังแห้ง",
+            "{name}ลองวางไฟฉายขวางทางไว้ แต่พอหันกลับ ไฟฉายไปอยู่ข้าง{object}เอง",
+            "เขาเรียก{witness}ให้มาดู แต่อีกฝ่ายตอบว่าคืนนั้นไม่ได้อยู่แถวนั้นเลย",
+            "เสียงลากของดังตามแนวร่องรอย แล้วหยุดทันทีเมื่อ{name}หยุดหายใจ",
+            "{manifestation}",
+            "{name}ลบรูปทั้งหมด แต่รูปเดิมกลับปรากฏบนหน้าจอพร้อมเงาที่ยืนใกล้กว่าเดิม",
+            "เขาจึงทิ้งโทรศัพท์ไว้ เปิดประตูฉุกเฉิน แล้ววิ่งออกโดยไม่เก็บหลักฐานชิ้นใด",
+        ],
+        "visuals": [
+            "the adult worker photographing a strange physical clue beside the forbidden object",
+            "a phone photo showing an impossible wet trail toward a distant doorway, screen unreadable",
+            "a flashlight mysteriously moved beside the forbidden object while the worker watches from afar",
+            "the adult worker making a tense phone call alone, no other living person",
+            "a dragged trail across the floor ending in darkness",
+            "the supernatural manifestation happening clearly in the exact location",
+            "a phone screen glowing with an unreadable haunted photograph, subtle ghost reflection",
+            "the adult worker escaping laterally through an emergency exit, leaving the phone behind",
+        ],
+    },
+    {
+        "id": "false_rescue",
+        "beats": [
+            "หลังพบ{clue} {name}โทรหา{witness}เพื่อขอให้มารับ",
+            "ไม่กี่นาทีต่อมา มีคนเคาะประตูและพูดด้วยเสียงของ{witness}ว่าเปิดให้หน่อย",
+            "แต่เสียงในโทรศัพท์ยังบอกว่าเขาเพิ่งออกจากบ้าน และห้ามเปิดประตูเด็ดขาด",
+            "คนหน้าประตูเริ่มเรียกชื่อ{name} พร้อมเล่าเรื่องที่มีแค่{name}กับ{witness}รู้",
+            "{name}ถอยไปซ่อนหลัง{object} ขณะที่ลูกบิดประตูหมุนช้า ๆ เอง",
+            "{manifestation}",
+            "สายโทรศัพท์ดับลง แต่เสียงของ{witness}กลับดังต่อจากลำโพงที่ไม่ได้เสียบปลั๊ก",
+            "{name}ปีนออกทางช่องบริการด้านหลัง และปล่อยให้เสียงนั้นเคาะประตูอยู่ข้างใน",
+        ],
+        "visuals": [
+            "the adult worker calling the local witness after discovering a clue",
+            "a closed door being knocked from outside, one human-shaped shadow beneath it",
+            "the worker listening to a phone while staring at the locked door, screen unreadable",
+            "the door seen close and threatening while the worker backs away",
+            "the worker hiding behind the forbidden object as the doorknob turns by itself",
+            "the supernatural manifestation appearing near the locked entrance",
+            "an unplugged old speaker producing a voice in the empty room",
+            "the worker climbing through a rear service opening while the door remains shut",
+        ],
+    },
+    {
+        "id": "lost_time",
+        "beats": [
+            "{name}เห็น{clue}แล้วก้มดูเวลา ก่อนพบว่านาฬิกาทุกเรือนหยุดตรงกัน",
+            "เขาทำงานต่อเพียงไม่กี่นาที แต่โทรศัพท์กลับแสดงว่าเวลาผ่านไปเกือบสองชั่วโมง",
+            "อาหารและน้ำที่เพิ่งซื้อมาเย็นชืดเหมือนถูกทิ้งไว้ข้ามคืน",
+            "เมื่อ{name}เปิดกล้องวงจรปิด ภาพกลับแสดงว่าเขายืนนิ่งข้าง{object}มาตลอดสองชั่วโมง",
+            "ในภาพมี{ghost}เดินผ่านหลังเขาซ้ำทุกสิบห้านาที แต่ตัวจริงไม่เคยเห็น",
+            "{manifestation}",
+            "{name}ปิดไฟหลักเพื่อหยุดเครื่องบันทึก ทว่าเสียงจากภาพยังเล่นต่อในความมืด",
+            "เขารอจนเสียงนาฬิกาเดินอีกครั้งแล้วออกทันที โดยยอมทิ้งงานทั้งหมดไว้",
+        ],
+        "visuals": [
+            "the adult worker comparing several stopped clocks beside the clue",
+            "a phone showing unreadable time while the worker looks confused",
+            "untouched food and water appearing old on a work table",
+            "security monitor showing the worker frozen beside the forbidden object, display unreadable",
+            "a ghost crossing behind the frozen worker on a surveillance monitor",
+            "the supernatural manifestation unfolding while time appears frozen",
+            "the worker cutting the main breaker as an old monitor remains lit",
+            "the worker leaving the work unfinished at the first moving clock tick",
+        ],
+    },
+    {
+        "id": "unwanted_delivery",
+        "beats": [
+            "{name}พบ{clue}ติดอยู่กับ{object}เหมือนมีคนเตรียมส่งมอบให้เขา",
+            "จากนั้นเสียงรถหรือฝีเท้าหยุดหน้าทางเข้า ทั้งที่ด้านนอกไม่มีใคร",
+            "ถุงหรือกล่องเปล่าถูกเลื่อนเข้ามาเอง และหยุดตรงปลายเท้าของ{name}",
+            "ข้างในมีของใช้ชิ้นหนึ่งของ{name}ที่ควรอยู่ที่บ้าน",
+            "{name}พยายามโทรกลับบ้าน แต่ปลายสายมีเพียงเสียงคนกำลังค้นหาของในห้องเขา",
+            "{manifestation}",
+            "เมื่อ{name}ปฏิเสธรับของ ประตูทุกบานเปิดพร้อมกันเหมือนกำลังเชิญให้ออกไป",
+            "เขาเดินออกมือเปล่า แต่เช้าวันต่อมากล่องใบนั้นกลับวางอยู่หน้าบ้าน",
+        ],
+        "visuals": [
+            "a delivery clue attached to the forbidden object, all labels blank",
+            "an empty exterior entrance after an unseen vehicle or footsteps arrive",
+            "an empty parcel sliding by itself across the floor toward the worker",
+            "the worker discovering one familiar personal belonging inside the parcel",
+            "the worker calling home while hearing an intruder, phone screen unreadable",
+            "the supernatural manifestation surrounding the parcel and forbidden object",
+            "all doors opening at once while the worker refuses the delivery",
+            "the same parcel outside a modest Thai home at dawn, no people",
+        ],
+    },
+    {
+        "id": "rule_test",
+        "beats": [
+            "พอเจอ{clue} {name}นึกถึงคำเตือนว่า {rule}",
+            "เขาจึงลองทำตรงข้ามเพียงเล็กน้อย เพื่อพิสูจน์ว่าคำเตือนเป็นเรื่องแต่ง",
+            "ช่วงแรกไม่มีอะไรเกิดขึ้น จนเสียงรอบตัวเงียบพร้อมกันเหมือนสถานที่กำลังรอฟัง",
+            "{object}เริ่มตอบสนองทุกครั้งที่{name}ทำผิดกฎซ้ำ แม้ไม่มีใครแตะมัน",
+            "{witness}ส่งข้อความมาว่าอย่าทดลองครั้งที่สาม แต่ข้อความมาช้าเกินไป",
+            "{manifestation}",
+            "{name}ย้อนทำทุกอย่างตามลำดับเดิมเพื่อแก้กฎ แต่ขั้นสุดท้ายต้องมีอีกคนทำแทน",
+            "เขาจึงทิ้งขั้นสุดท้ายไว้ไม่สมบูรณ์ แล้วหนีออกมาก่อนสิ่งนั้นจะเลือกคนแทน",
+        ],
+        "visuals": [
+            "the adult worker noticing a clue and remembering a local rule",
+            "the worker deliberately testing the forbidden rule near the object",
+            "the exact location becoming unnaturally silent and still",
+            "the forbidden object reacting by itself after the rule is broken",
+            "an urgent unreadable message arriving on the worker phone",
+            "the supernatural manifestation erupting after the third violation",
+            "the worker repeating a ritual sequence alone but missing the final participant",
+            "the worker fleeing before the unfinished ritual can complete",
+        ],
+    },
+    {
+        "id": "borrowed_memory_action",
+        "beats": [
+            "กลิ่นและ{clue}ทำให้{name}เห็นภาพสถานที่เดียวกันในอดีตซ้อนทับกับปัจจุบัน",
+            "คนในภาพเก่าเดินผ่าน{name}ไปโดยไม่เห็นเขา แต่ทุกคนหลบ{object}",
+            "{name}ตามภาพเหล่านั้นไปและพบเหตุการณ์ก่อนคนหนึ่งหายตัวไปเพียงไม่กี่นาที",
+            "ทันใดนั้นคนในอดีตคนหนึ่งหันมามอง{name}ตรง ๆ เหมือนเห็นเขามาตลอด",
+            "คนนั้นยื่นมือมาและเรียก{name}ด้วยชื่อที่ไม่มีใครใช้มานานแล้ว",
+            "{manifestation}",
+            "{name}ทำลายภาพซ้อนด้วยการย้าย{object}ออกจากตำแหน่งเดิมเป็นครั้งแรก",
+            "ปัจจุบันกลับมา แต่รอยเท้าของ{name}ในฝุ่นกลายเป็นรอยเท้าของคนที่หายไป",
+        ],
+        "visuals": [
+            "past and present versions of the same location overlapping around the adult worker",
+            "ghostly workers from the past avoiding the forbidden object without seeing the protagonist",
+            "the protagonist following an old event moments before a disappearance",
+            "one historical figure turning to stare directly at the present-day protagonist",
+            "the historical figure reaching forward while speaking an old name",
+            "the supernatural manifestation merging memory with the present location",
+            "the protagonist moving the forbidden object to break the memory projection",
+            "modern dusty footprints transforming into another missing person footprints",
+        ],
+    },
+    {
+        "id": "sound_map",
+        "beats": [
+            "หลังพบ{clue} {name}ได้ยินเสียงเคาะสั้น ๆ จากคนละมุมของ{place}",
+            "เขาจดตำแหน่งเสียงลงบนแผนผัง แล้วพบว่ามันกำลังตีวงเข้าหา{object}",
+            "เมื่อ{name}เดินสวนทิศ เสียงทั้งหมดหยุด ก่อนดังขึ้นจากใต้พื้นตรงที่ยืน",
+            "{witness}รับสายและบอกว่าเสียงแบบนี้เคยใช้บอกทางออก แต่ต้องฟังเฉพาะจังหวะที่ขาดหาย",
+            "{name}จึงเดินตามช่วงเงียบแทนเสียงเคาะ และพบประตูบริการที่ไม่เคยสังเกต",
+            "{manifestation}",
+            "ก่อนถึงประตู เสียงเคาะเปลี่ยนเป็นจังหวะเดียวกับหัวใจของ{name}จนแยกไม่ออก",
+            "เขากลั้นหายใจในจังหวะสุดท้าย แล้วผลักประตูออกไปก่อนเสียงจะดังจากในอก",
+        ],
+        "visuals": [
+            "the adult worker turning toward a distinct knocking sound in the exact location",
+            "the worker marking sound positions on a blank hand-drawn floor plan beside the forbidden object",
+            "the worker frozen as a knock comes from beneath the floor",
+            "the worker listening to a phone while the empty location stretches behind",
+            "the worker following silent intervals toward a hidden service door",
+            "the supernatural manifestation forming around the source of the knocks",
+            "the worker reaching the door while unseen knocks close in from all sides",
+            "the worker holding breath and pushing through the service door",
+        ],
+    },
+    {
+        "id": "erased_exit",
+        "beats": [
+            "{name}สังเกต{clue}ก่อนพบว่าป้ายบอกทางออกที่เคยเห็นตอนเข้ามาหายไป",
+            "เขาใช้โทรศัพท์ถ่ายทุกทางแยกไว้ แต่ภาพแต่ละรูปกลับแสดงทางเดินคนละแบบ",
+            "{name}ขีดเครื่องหมายบนผนัง ทว่าเมื่อเดินกลับมา เครื่องหมายนั้นอยู่ฝั่งตรงข้าม",
+            "หลังโทรหา{witness} อีกฝ่ายบอกให้เลือกทางที่ไม่มี{object}อยู่ปลายทาง",
+            "แต่ทุกทางที่{name}เปิดกลับมี{object}รออยู่ในตำแหน่งใหม่",
+            "{manifestation}",
+            "{name}จึงปิดตา ใช้มือแตะผนัง และเดินตามเสียงจากโลกภายนอกแทนภาพที่เห็น",
+            "เมื่อออกมาได้ เขาพบเครื่องหมายที่ขีดไว้ติดอยู่บนฝ่ามือตัวเอง",
+        ],
+        "visuals": [
+            "the adult worker discovering that the familiar exit sign and doorway are gone",
+            "several unreadable phone photos showing contradictory corridors",
+            "a wall mark mysteriously appearing on the opposite side of a corridor",
+            "the worker calling the witness at a branching passage",
+            "the forbidden object waiting beyond every newly opened route",
+            "the supernatural manifestation distorting the architecture around the worker",
+            "the worker moving with closed eyes and one hand against the wall",
+            "the worker outside at dawn staring at a strange mark on one palm",
+        ],
+    },
+    {
+        "id": "missing_companion",
+        "beats": [
+            "เมื่อเจอ{clue} {name}ได้ยินเสียง{witness}เรียกจากอีกด้านของ{place}",
+            "เขาเดินตามไปและพบของใช้ของอีกฝ่ายตกอยู่ข้าง{object} ทั้งที่คืนนั้นมาคนเดียว",
+            "เสียงฝีเท้าสองชุดเดินขนาบ{name}อยู่หลังผนัง แต่ไม่มีใครปรากฏในทางเดิน",
+            "{name}โทรหา{witness}และได้ยินเสียงเรียกสายดังอยู่ใกล้ ๆ ก่อนอีกฝ่ายรับจากบ้าน",
+            "พื้นฝุ่นเกิดรอยเท้าคู่ใหม่ เดินนำ{name}ไปยังห้องที่ถูกล็อกจากข้างนอก",
+            "{manifestation}",
+            "เมื่อประตูเปิด ด้านในไม่มีคน มีเพียงเงาของ{name}สองเงาที่ยืนหันคนละทาง",
+            "เขาเลือกเดินตามเงาที่ไม่ขยับตามตัวเอง และมันพาไปถึงทางออก",
+        ],
+        "visuals": [
+            "the adult worker hearing the local witness call from across the exact location",
+            "one familiar personal belonging beside the forbidden object with no second living person",
+            "the worker between two walls as parallel footsteps move unseen",
+            "the worker on a phone while another phone rings nearby in darkness",
+            "two fresh footprint trails leading toward a locked room",
+            "the supernatural manifestation appearing at the locked room",
+            "the worker facing two conflicting shadows cast by one body",
+            "the worker following the motionless shadow toward an exit",
+        ],
+    },
+    {
+        "id": "undoing_work",
+        "beats": [
+            "{name}จัดการ{object}ตามงานจนเรียบร้อย แล้วสังเกตเห็น{clue}อยู่ใต้ตำแหน่งเดิม",
+            "ทันทีที่หันหลัง งานทุกอย่างกลับไปอยู่สภาพก่อนเริ่มเหมือนไม่เคยมีใครแตะ",
+            "เขาทำซ้ำอีกครั้งพร้อมตั้งกล้องไว้ แต่ไฟล์ภาพหายเฉพาะช่วงที่ของเคลื่อนกลับ",
+            "{witness}เตือนว่าอย่าทำงานชิ้นนั้นเสร็จ เพราะคนก่อนหน้าหายไปหลังเก็บขั้นสุดท้าย",
+            "{name}จงใจเว้นงานหนึ่งส่วนไว้ แต่{object}เริ่มจัดการตัวเองให้ครบ",
+            "{manifestation}",
+            "เขาทำลายลำดับงานด้วยการนำชิ้นแรกไปวางในจุดที่ไม่มีอยู่ในคู่มือ",
+            "ทุกอย่างหยุดนิ่ง {name}จึงออกมาโดยปล่อยงานค้างไว้ตลอดกาล",
+        ],
+        "visuals": [
+            "the adult worker completing a specific task on the forbidden object and finding a clue beneath it",
+            "the finished work mysteriously reset to its original state",
+            "a fixed camera aimed at the object while the worker repeats the task",
+            "the worker receiving a warning phone call beside the unfinished work",
+            "the forbidden object completing the final task by itself",
+            "the supernatural manifestation emerging as the work completes",
+            "the worker placing the first component in an unexpected safe location",
+            "the permanently unfinished task left alone after the worker escapes",
+        ],
+    },
+    {
+        "id": "wrong_inventory",
+        "beats": [
+            "ใกล้{object} {name}พบ{clue}และเริ่มนับของทั้งหมดเพื่อรายงาน{witness}",
+            "ยอดรวมเกินมาหนึ่งชิ้นทุกครั้ง แต่ของที่เกินเปลี่ยนตำแหน่งและรูปร่างตลอด",
+            "พอ{name}แยกของต้องสงสัยไว้ ไฟดับชั่วครู่และของชิ้นอื่นกลับหายไปแทน",
+            "รายชื่อในโทรศัพท์ของ{name}ค่อย ๆ หายทีละคนพร้อมกับของแต่ละชิ้นที่เขานับ",
+            "{witness}บอกให้หยุดนับทันที เพราะสิ่งที่เกินมาไม่ได้ต้องการถูกหาเจอ แต่อยากให้มีคนมาแทน",
+            "{manifestation}",
+            "{name}พูดจำนวนที่ขาดแทนจำนวนที่มี ทำให้เสียงนับจากความมืดตอบผิดจังหวะ",
+            "เขาอาศัยจังหวะนั้นเดินออกมา แต่เช้าวันต่อมาชื่อของเขาหายจากบัญชีคนทำงาน",
+        ],
+        "visuals": [
+            "the adult worker counting a grounded inventory around the forbidden object and clue",
+            "one impossible extra item changing position among the real inventory",
+            "a blackout leaving a different empty space where an item vanished",
+            "the worker holding an unreadable contacts screen as inventory disappears",
+            "the worker receiving a frightened warning beside partially counted items",
+            "the supernatural manifestation hiding among the counted objects",
+            "the worker speaking a false count into darkness while an unseen presence hesitates",
+            "a blank worker roster at dawn where the protagonist name used to be, text unreadable",
+        ],
+    },
+    {
+        "id": "weather_inside",
+        "beats": [
+            "หลังพบ{clue} {name}ได้ยินเสียงฝนหรือแรงลมดังจากด้านใน{place}ทั้งที่ภายนอกสงบ",
+            "หยดน้ำเริ่มตกเฉพาะรอบ{object} แล้วค่อย ๆ ลามเป็นทางไปยังมุมปิดตาย",
+            "{name}ใช้ผ้ากั้นน้ำ แต่ผ้ากลับเปียกจากด้านบนพร้อมรอยนิ้วมือ",
+            "{witness}บอกว่าสภาพอากาศแบบนี้เคยเกิดในคืนที่มีคนหาย และห้ามยืนตรงจุดแห้ง",
+            "ทันทีที่{name}ขยับจากจุดแห้ง พื้นบริเวณนั้นยุบลงเหมือนมีอะไรพุ่งชนจากข้างใต้",
+            "{manifestation}",
+            "{name}เดินตามทิศของลมเย็นซึ่งสวนกับกระแสน้ำ จนพบช่องเปิดเล็ก ๆ สู่ภายนอก",
+            "เมื่อออกมา เสื้อผ้ายังแห้งสนิท แต่ในกระเป๋ามีน้ำขุ่นเต็มอยู่โดยไม่รั่วออกมา",
+        ],
+        "visuals": [
+            "the adult worker hearing impossible indoor rain or wind around the clue",
+            "rain falling only around the forbidden object and flowing toward a sealed corner",
+            "a hanging cloth wet from above with fresh handprints",
+            "the worker receiving a warning call while standing on one dry patch",
+            "the abandoned dry floor collapsing upward from an impact beneath it",
+            "the supernatural manifestation appearing within the impossible indoor weather",
+            "the worker following cold wind against flowing water toward a small opening",
+            "the dry worker outside discovering murky water sealed inside one pocket",
+        ],
+    },
+]
+
+
 VISUAL_PROFILES = [
     "observational Thai night-film realism with neutral natural colors and restrained handheld energy",
     "precise architectural suspense with practical fluorescent light and deep layered backgrounds",
@@ -895,6 +1177,76 @@ def short_object_reference(object_name):
 
 def derive_setting_details(setting):
     place = setting["place"]
+    if "ท่ารถ" in place:
+        return {
+            "sensory": "กลิ่นเบาะรถชื้นกับเสียงเครื่องยนต์เก่าที่ดังมาจากลานว่าง",
+            "clue": "ตั๋วเปียกใบหนึ่งถูกหนีบไว้ตรงช่องของเที่ยวรถที่ไม่มีในตาราง",
+            "rule": "ห้ามขึ้นรถคันที่จอดโดยไม่มีคนขับ",
+            "time": "หลังรถเที่ยวสุดท้ายออกไปแล้ว",
+        }
+    if "ห้องฉายหนัง" in place or "โรงภาพยนตร์" in place:
+        return {
+            "sensory": "กลิ่นฟิล์มไหม้กับเสียงเครื่องฉายหมุนจากโรงที่ปิดไฟ",
+            "clue": "เศษฟิล์มเส้นใหม่พาดจากเครื่องฉายไปถึงประตูโรงว่าง",
+            "rule": "ห้ามฉายฟิล์มม้วนที่ไม่มีชื่อจนถึงเฟรมสุดท้าย",
+            "time": "หลังรอบฉายสุดท้ายผ่านไปหลายปีแล้ว",
+        }
+    if "โรงเรียน" in place:
+        return {
+            "sensory": "กลิ่นชอล์กกับเสียงเก้าอี้ครูครูดพื้นจากอาคารว่าง",
+            "clue": "สมุดเช็กชื่อเปิดค้างอยู่ตรงหน้าที่ไม่มีรายชื่อนักเรียน",
+            "rule": "ห้ามขานรับเมื่อได้ยินเสียงเรียกชื่อจากห้องที่ล็อกอยู่",
+            "time": "คืนแรกของช่วงปิดเทอม",
+        }
+    if "อู่เรือ" in place:
+        return {
+            "sensory": "กลิ่นไม้เรือเปียกกับเสียงน้ำกระทบท้องเรือที่วางอยู่บนบก",
+            "clue": "เชือกผูกเรือเส้นหนึ่งเปียกและตึงไปถึงเงามืดท้ายอู่",
+            "rule": "ห้ามแก้เชือกของเรือที่ไม่มีหมายเลข",
+            "time": "หลังช่างเรือกลับไปหมดแล้ว",
+        }
+    if "ลิฟต์" in place or "ห้าง" in place:
+        return {
+            "sensory": "เสียงสายลิฟต์เสียดกันทั้งที่ตัดไฟ และกลิ่นโลหะอับจากปล่อง",
+            "clue": "ไฟเรียกชั้นติดขึ้นตรงหมายเลขที่ไม่มีอยู่ในแผงควบคุม",
+            "rule": "ห้ามเปิดประตูเมื่อลิฟต์หยุดระหว่างชั้น",
+            "time": "หลังห้างปิดและลิฟต์ทุกตัวหยุดบริการ",
+        }
+    if "หอพัก" in place:
+        return {
+            "sensory": "กลิ่นผ้าชื้นกับเสียงลากรองเท้าจากห้องที่ไม่มีผู้พัก",
+            "clue": "กุญแจห้องว่างถูกวางบนขอบหน้าต่างจากด้านใน",
+            "rule": "ห้ามรับกุญแจจากคนที่ไม่ยอมบอกเลขห้อง",
+            "time": "หลังผู้พักเวรดึกออกไปทำงานหมดแล้ว",
+        }
+    if "วิทยุ" in place:
+        return {
+            "sensory": "เสียงคลื่นแตกพร่ากับกลิ่นฝุ่นร้อนจากเครื่องส่งที่ปิดอยู่",
+            "clue": "เข็มวัดสัญญาณขยับตามเสียงหายใจจากเทปเก่า",
+            "rule": "ห้ามเปิดไมค์ตอบเสียงที่เรียกชื่อจากคลื่นว่าง",
+            "time": "หลังรายการสดสุดท้ายจบลง",
+        }
+    if "รองเท้า" in place:
+        return {
+            "sensory": "กลิ่นหนังเปียกกับเสียงฝีเท้าเดินอยู่บนสะพานลอยว่าง",
+            "clue": "รอยโคลนคู่หนึ่งเริ่มจากโต๊ะซ่อมและหายไปตรงบันได",
+            "rule": "ห้ามลองรองเท้าคู่ที่เจ้าของไม่เคยมารับ",
+            "time": "หลังร้านใต้สะพานลอยปิดหมดแล้ว",
+        }
+    if "ตำรวจ" in place or "หลักฐาน" in place:
+        return {
+            "sensory": "กลิ่นแฟ้มชื้นกับเสียงโทรศัพท์สั่นจากชั้นวางที่ปิดผนึก",
+            "clue": "ถุงหลักฐานใบหนึ่งมีตรารับของเป็นเวลาของวันพรุ่งนี้",
+            "rule": "ห้ามรับสายจากโทรศัพท์ที่อยู่ในถุงปิดผนึก",
+            "time": "หลังเปลี่ยนเวรกลางคืน",
+        }
+    if "ลานจอดรถ" in place:
+        return {
+            "sensory": "เสียงยางบดพื้นดังวนอยู่หลังเสาคอนกรีตทั้งที่ลานว่าง",
+            "clue": "บัตรจอดรถชื้นวางอยู่ตรงช่องออกพร้อมรอยมือด้านในกระจก",
+            "rule": "ห้ามยกไม้กั้นให้รถที่มองไม่เห็นคนขับ",
+            "time": "หลังรถคันสุดท้ายออกจากอาคาร",
+        }
     if "โรงละคร" in place:
         return {
             "sensory": "กลิ่นฝุ่นผสมกลิ่นผ้าเก่าที่อับอยู่หลังฉาก",
@@ -916,7 +1268,7 @@ def derive_setting_details(setting):
             "rule": "ห้ามตอบถ้ามีคนเรียกจากด้านในห้องคัดแยก",
             "time": "หลังที่ทำการปิดเงียบไปแล้ว",
         }
-    if "แพ" in place or "ท่าเรือ" in place:
+    if place.startswith("แพ") or "ท่าเรือ" in place:
         return {
             "sensory": "กลิ่นน้ำค้างแม่น้ำกับเชือกเปียกที่ชื้นค้างอยู่",
             "clue": "รอยน้ำเป็นทางเหมือนมีใครเดินขึ้นมาจากท่า",
@@ -944,7 +1296,7 @@ def derive_setting_details(setting):
             "rule": "ห้ามเดินตามเสียงหวีดที่ไม่มีขบวนรถ",
             "time": "หลังขบวนสุดท้ายผ่านไปแล้ว",
         }
-    if "ตลาด" in place:
+    if "ตลาด" in place and "โรงน้ำแข็ง" not in place:
         return {
             "sensory": "กลิ่นของค้างคืนกับพื้นเปียกที่ยังไม่แห้ง",
             "clue": "รอยเท้าเปียกเดินสวนทางกับทางออก",
@@ -996,25 +1348,36 @@ def experience_scene_specs(seed):
     sensory = seed["sensory"]
     clue = seed["clue"]
     rule = seed["rule"]
+    action_path = seed["_action_path"]
+    template_context = {
+        "name": name,
+        "place": place_short,
+        "object": object_short,
+        "witness": witness,
+        "ghost": ghost,
+        "rule": rule,
+        "clue": clue,
+        "sensory": sensory,
+        "manifestation": motif["manifestation"].format(place=place_short, object=object_short, name=name),
+    }
+    middle_lines = [template.format(**template_context) for template in action_path["beats"]]
 
     lines = [
         frame["opening"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
         frame["ordinary"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
         frame["local"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
-        f"พอ{name}เข้าไปถึง{place_short} ที่นั่นเงียบผิดปกติ จน{sensory}ชัดขึ้นเหมือนมีใครคอยฟังทุกก้าว",
-        f"ใกล้{object_short}มี{clue} เหมือนถูกวางไว้ให้{name}เห็นโดยตั้งใจ",
-        f"{motif['manifestation'].format(place=place_short, object=object_short, name=name)} คราวนี้{name}รู้แล้วว่าไม่ใช่เรื่องแกล้งกัน",
-        frame["response"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
-        f"เมื่อ{name}มองกระจกอีกด้าน {ghost}ยืนอยู่ในเงาสะท้อน ทั้งที่ตรงนั้นไม่มีใคร",
-        f"{name}วาง{object_short}แล้วรีบออก แต่ทางเดิมกลับพาวนมาที่จุดเดิมทุกครั้ง",
-        f"ทุกครั้งที่วนกลับมา ไฟดับเพิ่มหนึ่งดวง และ{object_short}ขยับเข้ามาใกล้มือเอง",
-        f"{witness}ยอมบอกว่าเคยมีคนพยายามเอา{object_short}ออกจาก{place_short} แล้วคนนั้นไม่เคยกลับมา",
+        *middle_lines,
         f"{motif['reveal'].format(place=place_short, object=object_short, name=name)} นั่นคือเหตุผลที่มันเลือก{name}",
-        f"{name}ทำตามคำเตือนว่า {rule} แล้วเดินออกไปโดยไม่หันกลับ แม้เสียงเรียกชื่อจะดังอยู่ข้างหลัง",
-        f"เช้าวันต่อมา {witness}พบ{object_short}อยู่ที่เดิม แต่ข้างกันมีของใช้ของ{name}เพิ่มมาอีกชิ้น",
+        f"หลังรอดออกมา {name}โทรหา{witness}อีกครั้ง แต่อีกฝ่ายจำไม่ได้ว่าเคยให้คำเตือนเรื่องนี้",
+        f"เช้าวันต่อมา มีหลักฐานจากเหตุการณ์ติดมากับของใช้ของ{name}หนึ่งชิ้น ทั้งที่เขาทิ้งทุกอย่างไว้ข้างใน",
         frame["ending"].format(name=name, place=place_short, object=object_short, role=role, time=time_text, witness=witness, rule=rule),
     ]
-    visuals = build_experience_visuals(seed)
+    base_visuals = build_experience_visuals(seed)
+    path_visuals = [
+        f"{visual}; exact location: {place_visual}; protagonist: exactly one {role_visual}; forbidden object: {object_visual}"
+        for visual in action_path["visuals"]
+    ]
+    visuals = [*base_visuals[:3], *path_visuals, *base_visuals[12:16]]
     specs = [
         {"narration": narration, "visual": visual, "imagePrompt": visual}
         for narration, visual in zip(lines, visuals)
@@ -1031,6 +1394,7 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     blocked_frames = avoid.get("frames", set())
     blocked_profiles = avoid.get("profiles", set())
     blocked_opening_modes = avoid.get("openingModes", set())
+    blocked_paths = avoid.get("paths", set())
     setting_candidates = [item for item in EXPERIENCE_SETTINGS if item["place"] not in blocked_places]
     if brief.strip():
         matched = [item for item in EXPERIENCE_SETTINGS if item["place"] in brief]
@@ -1040,6 +1404,8 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
     motif = random.choice(motif_candidates or EXPERIENCE_MOTIFS)
     frame_candidates = [item for item in REFERENCE_NARRATIVE_FRAMES if item["id"] not in blocked_frames]
     frame = random.choice(frame_candidates or REFERENCE_NARRATIVE_FRAMES)
+    path_candidates = [item for item in EXPERIENCE_ACTION_PATHS if item["id"] not in blocked_paths]
+    action_path = random.choice(path_candidates or EXPERIENCE_ACTION_PATHS)
     name = random.choice(THAI_NAMES)
     details = derive_setting_details(setting)
     visual_profile_candidates = [item for item in VISUAL_PROFILES if item not in blocked_profiles]
@@ -1068,6 +1434,7 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
         "_setting": setting,
         "_motif": motif,
         "_frame": frame,
+        "_action_path": action_path,
         "_visual_profile": visual_profile,
         "_visual_nonce": visual_nonce,
         "_blocked_opening_modes": blocked_opening_modes,
@@ -1152,6 +1519,7 @@ def install_make_story_tuning(server):
                 "visualProfile": seed.get("_visual_profile", "natural Thai horror realism"),
                 "visualNonce": seed.get("_visual_nonce", f"{random.getrandbits(64):016x}"),
                 "openingMode": seed.get("_opening_mode", "location_hook"),
+                "actionPath": seed.get("_action_path", {}).get("id", ""),
             },
             "targetSeconds": target_seconds,
             "scenes": scenes,
@@ -1321,13 +1689,14 @@ def tuned_ai_image_prompt(server, scene, story, size):
 def tune_ffmpeg_command(command):
     tuned = []
     old_music_expression = "0.135*sin(2*PI*43*t)+0.078*sin(2*PI*69*t)+0.052*sin(2*PI*(94+7*sin(2*PI*0.045*t))*t)"
-    new_music_expression = "0.172*sin(2*PI*43*t)+0.104*sin(2*PI*69*t)+0.068*sin(2*PI*(94+7*sin(2*PI*0.045*t))*t)+0.034*sin(2*PI*(156+13*sin(2*PI*0.031*t))*t)"
+    new_music_expression = "0.190*sin(2*PI*43*t)+0.112*sin(2*PI*64.5*t)+0.076*sin(2*PI*86*t)+0.060*sin(2*PI*(130.81+16*sin(2*PI*0.03125*t))*t)*(0.45+0.55*sin(2*PI*0.19*t)*sin(2*PI*0.19*t))+0.036*sin(2*PI*293.66*t)*(0.5+0.5*sin(2*PI*0.07*t))"
     for item in command:
         if isinstance(item, str):
             item = item.replace(old_music_expression, new_music_expression)
             item = item.replace("volume=1.18", "volume=1.42")
             item = item.replace("[1:a]volume=1.28,asplit=3[a_voice][voice_sc_music][voice_sc_sfx];", "[1:a]volume=1.58,asplit=3[a_voice][voice_sc_music][voice_sc_sfx];")
             item = item.replace("[2:a]volume=1.25[a_music_raw];", "[2:a]volume=1.72[a_music_raw];")
+            item = item.replace("[2:a]volume=1.72[a_music_raw];", "[2:a]volume=1.92[a_music_raw];")
             item = item.replace(
                 "[a_music_raw][voice_sc_music]sidechaincompress=threshold=0.042:ratio=2.8:attack=18:release=420:makeup=1[a_music];",
                 "[a_music_raw][voice_sc_music]sidechaincompress=threshold=0.058:ratio=2.2:attack=18:release=520:makeup=1.12[a_music];",
