@@ -6,9 +6,8 @@
   "schedule": {
     "timezone": "Asia/Bangkok",
     "times": [
-      "06:00",
-      "11:00",
-      "18:00"
+      "09:05",
+      "20:05"
     ]
   },
   "youtube": {
