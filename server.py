@@ -47,8 +47,8 @@ FONT_FALLBACKS = [
     Path("/usr/share/fonts/truetype/tlwg/Garuda.ttf"),
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 ]
-SHORT_MAX_SECONDS = 179.0
-NARRATION_SLOWDOWN = 1.5
+SHORT_MAX_SECONDS = 160.0
+NARRATION_SLOWDOWN = 1.3
 VOICE = "Kanya (Enhanced)"
 THAI_NAMES = [
     "นนท์", "ตั้ม", "วิน", "บาส", "ก้อง", "พีท", "อาร์ม", "เต้", "มอส", "เคน",
@@ -1887,9 +1887,9 @@ def render_video(payload, avoid=None, batch_index=None):
 
     total_duration = sum(durations)
     if mode == "short" and total_duration > SHORT_MAX_SECONDS:
-        # Preserve the requested 1.5x storytelling pace whenever possible. For
-        # unusually long scripts, make only the minimum correction needed to
-        # remain safely below YouTube's three-minute Shorts boundary.
+        # Preserve the requested storytelling pace whenever possible. For an
+        # unusually long script, make only the minimum correction needed to
+        # remain below the configured Shorts duration ceiling.
         correction = total_duration / (SHORT_MAX_SECONDS - 0.5)
         corrected_durations = []
         for audio_path in audios:
