@@ -48,6 +48,7 @@ FONT_FALLBACKS = [
     Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"),
 ]
 SHORT_MAX_SECONDS = 160.0
+LONG_MIN_SECONDS = 602.0
 NARRATION_SLOWDOWN = 1.3
 VOICE = "Kanya (Enhanced)"
 THAI_NAMES = [
@@ -1018,7 +1019,7 @@ def scene_image_directives(scene, story):
 def make_story(mode, brief, avoid=None):
     seed = make_seed(brief, avoid=avoid)
     lines = story_lines(seed, mode)
-    target_seconds = 148 if mode == "short" else 420
+    target_seconds = 148 if mode == "short" else 630
     duration = max(6, round(target_seconds / len(lines)))
     scenes = []
     for index, line in enumerate(lines, start=1):
@@ -1903,6 +1904,22 @@ def render_video(payload, avoid=None, batch_index=None):
             corrected_durations.append(ffprobe_duration(audio_path))
         durations = corrected_durations
         total_duration = sum(durations)
+    elif mode == "long" and total_duration < LONG_MIN_SECONDS:
+        correction = total_duration / LONG_MIN_SECONDS
+        if correction < 0.5:
+            raise RuntimeError("บท LONG สั้นเกินไปจนไม่สามารถขยายเป็น 10 นาทีโดยยังฟังเป็นธรรมชาติ")
+        corrected_durations = []
+        for audio_path in audios:
+            corrected = audio_path.with_name(f"{audio_path.stem}-long-safe.aiff")
+            run([
+                FFMPEG, "-y", "-i", str(audio_path),
+                "-af", f"atempo={correction:.6f}",
+                "-c:a", "pcm_s16be", str(corrected),
+            ])
+            corrected.replace(audio_path)
+            corrected_durations.append(ffprobe_duration(audio_path))
+        durations = corrected_durations
+        total_duration = sum(durations)
     is_short = mode == "short"
     render_format = "short" if is_short else "long"
     size = (1080, 1920) if is_short else (1600, 900)
@@ -1913,7 +1930,6 @@ def render_video(payload, avoid=None, batch_index=None):
     story["renderFormat"] = render_format
     story["renderOrientation"] = "vertical" if is_short else "horizontal"
     story["plannedSeconds"] = round(total_duration, 1)
-
     segments = []
     for scene, audio_path, duration in zip(story["scenes"], audios, durations):
         base_path = work / f"base-{scene['number']:02d}.jpg"
@@ -2030,7 +2046,10 @@ def render_video(payload, avoid=None, batch_index=None):
         "-shortest", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", str(output),
     ])
 
-    story["targetSeconds"] = round(ffprobe_duration(output), 1)
+    output_duration = ffprobe_duration(output)
+    if mode == "long" and output_duration < 600:
+        raise RuntimeError(f"วิดีโอ LONG สั้นกว่า 10 นาที ({output_duration:.1f} วินาที) ระบบจึงไม่ส่งไปอัปโหลด")
+    story["targetSeconds"] = round(output_duration, 1)
     story.pop("_imageFingerprints", None)
     return story, file_name
 
