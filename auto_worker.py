@@ -102,11 +102,11 @@ def make_description(story, footer):
     return "\n".join(part for part in parts if part is not None).strip()[:4900]
 
 
-def run_once(upload_override=None):
+def run_once(upload_override=None, mode_override=None):
     config = load_config()
     generation_history = load_generation_history()
     payload = {
-        "mode": config.get("mode", "short"),
+        "mode": mode_override or config.get("mode", "short"),
         "brief": config.get("brief", ""),
         "count": config.get("count", 1),
         "avoidRecent": make_recent_avoidance(generation_history),
@@ -182,7 +182,7 @@ def next_scheduled_run(schedule_times, timezone_name):
     return tomorrow.replace(hour=first_hour, minute=first_minute, second=0, microsecond=0)
 
 
-def run_schedule(upload_override, schedule_times, timezone_name):
+def run_schedule(upload_override, schedule_times, timezone_name, mode_override=None):
     while True:
         run_at = next_scheduled_run(schedule_times, timezone_name)
         wait_seconds = max(1, (run_at - datetime.now(ZoneInfo(timezone_name))).total_seconds())
@@ -195,7 +195,7 @@ def run_schedule(upload_override, schedule_times, timezone_name):
         time.sleep(wait_seconds)
 
         try:
-            results = run_once(upload_override=upload_override)
+            results = run_once(upload_override=upload_override, mode_override=mode_override)
             print(json.dumps(results, ensure_ascii=False, indent=2), flush=True)
         except Exception as error:
             append_log({
@@ -216,6 +216,7 @@ def main():
     parser.add_argument("--interval-minutes", type=int, default=360, help="Delay between batches in loop mode.")
     parser.add_argument("--upload", action="store_true", help="Upload to YouTube regardless of config.")
     parser.add_argument("--no-upload", action="store_true", help="Do not upload to YouTube regardless of config.")
+    parser.add_argument("--mode", choices=("short", "long"), default=None, help="Override the configured video mode.")
     args = parser.parse_args()
     config = load_config()
 
@@ -232,12 +233,12 @@ def main():
         schedule_config = config.get("schedule", {})
         time_values = args.schedule_times or schedule_config.get("times", ["18:00"])
         timezone_name = args.timezone or schedule_config.get("timezone", "Asia/Bangkok")
-        run_schedule(upload_override, parse_schedule_times(time_values), timezone_name)
+        run_schedule(upload_override, parse_schedule_times(time_values), timezone_name, mode_override=args.mode)
         return
 
     while True:
         try:
-            results = run_once(upload_override=upload_override)
+            results = run_once(upload_override=upload_override, mode_override=args.mode)
             print(json.dumps(results, ensure_ascii=False, indent=2))
         except Exception as error:
             append_log({
