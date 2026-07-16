@@ -1444,7 +1444,39 @@ def make_coherent_seed(server, original_make_seed, brief, avoid=None):
 
 def story_lines(server, original_story_lines, seed, mode):
     if seed.get("_experience"):
-        return [scene["narration"] for scene in experience_scene_specs(seed)]
+        lines = [scene["narration"] for scene in experience_scene_specs(seed)]
+        if mode == "short":
+            return lines
+        setting = seed["_setting"]
+        name = seed["name"]
+        place = short_place_reference(setting["place"])
+        object_name = short_object_reference(setting["object"])
+        witness = setting["witness"]
+        sensory = seed["sensory"]
+        clue = seed["clue"]
+        rule = seed["rule"]
+        ghost = seed["_motif"]["ghost"]
+        expansions = [
+            f"คนในพื้นที่เล่าว่า{place}เคยมีเหตุผิดปกติมาก่อนหลายครั้ง แต่ทุกครั้งเรื่องจะถูกเงียบไว้ ไม่มีใครยอมให้ชื่อของสถานที่ไปอยู่ในรายงานอย่างเป็นทางการ รายละเอียดที่ตรงกันมีเพียงบรรยากาศแบบเดียวกัน คือ{sensory}",
+            f"งานของ{name}ในคืนนั้นควรใช้เวลาไม่นาน เขาเตรียมอุปกรณ์มาตามปกติ เช็กทางเข้าและทางออกไว้แล้ว และส่งข้อความบอกคนใกล้ตัวว่าจะกลับก่อนดึก จึงไม่มีเหตุผลใดให้คิดว่าตัวเองกำลังเดินเข้าไปในกับดัก",
+            f"คำเตือนของ{witness}ฟังดูประหลาด แต่สีหน้าและน้ำเสียงกลับจริงจังเกินกว่าจะเป็นเรื่องแกล้งกัน โดยเฉพาะประโยคที่ว่า {rule} เพราะอีกฝ่ายย้ำว่าถ้าเกิดขึ้นจริง ห้ามเสียเวลาหาคำอธิบายและต้องออกมาทันที",
+            f"{name}สำรวจ{clue}อย่างละเอียดและพบว่าร่องรอยยังใหม่ ทั้งที่บริเวณนั้นถูกปิดมานาน เขาถ่ายรูปไว้หลายมุม วางตำแหน่งของ{object_name}ไว้ในใจ และพยายามไม่แตะต้องสิ่งใดก่อนรู้ว่าใครเป็นเจ้าของ",
+            f"ช่วงแรกเหตุการณ์ยังเบามากจน{name}คิดว่าเป็นเสียงจากโครงสร้างเก่า แต่เมื่อหยุดเดิน เสียงนั้นก็หยุดพร้อมกัน และเมื่อขยับอีกครั้ง มันก็ตามมาในระยะที่ใกล้กว่าเดิม ราวกับกำลังเรียนรู้จังหวะการเคลื่อนไหวของเขา",
+            f"เขาลองตรวจประตู หน้าต่าง และจุดที่น่าจะมีคนซ่อนอยู่ทีละแห่ง ทุกจุดว่างเปล่า แต่{object_name}กลับเปลี่ยนตำแหน่งทุกครั้งที่คลาดสายตา ความผิดปกตินี้ทำให้เหตุผลธรรมดาที่เตรียมไว้ใช้ไม่ได้อีกต่อไป",
+            f"{name}โทรหา{witness}และเล่าสิ่งที่เห็นอย่างช้า ๆ ปลายสายเงียบอยู่นานก่อนตอบว่ารายละเอียดนั้นเหมือนกับเหตุการณ์ครั้งก่อนทุกอย่าง เพียงแต่คนในครั้งก่อนหายไปก่อนจะเล่าว่าหลังจากนั้นเกิดอะไรขึ้น",
+            f"ความมืดใน{place}ไม่ได้ดำสนิท แต่ดูเหมือนมีชั้นบางอย่างเคลื่อนไหวอยู่ข้างใน {name}เริ่มเห็น{ghost}เพียงเสี้ยววินาทีตามขอบสายตา และทุกครั้งที่หันไปตรง ๆ ตำแหน่งนั้นจะเหลือเพียงพื้นที่ว่าง",
+            f"เมื่อพยายามย้อนทางเดิม เขาพบว่าระยะของทางเดินไม่เท่าเดิม จุดสังเกตบางอย่างหายไป และเสียงจากโลกภายนอกเบาลงเรื่อย ๆ เหมือน{place}กำลังตัดเขาออกจากเวลาปกติทีละน้อย",
+            f"{name}บังคับตัวเองให้จำคำเตือนทีละคำ เขาหยุดตอบเสียงเรียก หยุดมองตามเงา และไม่ยื่นมือไปรับ{object_name} แม้เสียงของคนที่ไว้ใจจะดังมาจากด้านหลังอย่างชัดเจนจนแทบแยกไม่ออก",
+            f"ทางรอดเกิดขึ้นเพียงช่วงสั้น ๆ เมื่อเสียงทั้งหมดเงียบพร้อมกัน {name}ตัดสินใจทิ้งอุปกรณ์และงานไว้ วิ่งตามกระแสลมจากด้านนอกโดยไม่หันกลับ แม้จะได้ยินฝีเท้าตามมาติด ๆ จนถึงประตู",
+            f"หลังออกมาได้ เขาจึงค่อยนำเหตุการณ์ทั้งหมดมาต่อกัน และพบว่าเบาะแสตั้งแต่ต้นไม่ได้มีไว้เตือนให้หนี แต่มันถูกวางเพื่อพาเขาไปยังจุดเดิมอย่างเป็นขั้นตอน ความจริงนี้ทำให้สิ่งที่เกิดขึ้นน่ากลัวกว่าการพบผีโดยตรง",
+            f"เมื่อ{name}ติดต่อ{witness}อีกครั้ง รายละเอียดหลายอย่างกลับไม่ตรงกับบทสนทนาก่อนหน้า อีกฝ่ายปฏิเสธว่าไม่เคยโทรหา ไม่เคยให้คำเตือน และไม่รู้ด้วยซ้ำว่า{name}เข้าไปใน{place}คืนนั้น",
+            f"หลักฐานที่ติดกลับออกมาไม่ควรอยู่กับเขา ทั้งเวลา ตำแหน่ง และสภาพของมันขัดกับสิ่งที่จำได้ {name}เก็บของชิ้นนั้นไว้โดยไม่เปิดดูอีก เพราะทุกครั้งที่เข้าใกล้จะได้กลิ่นและได้ยินเสียงแบบเดียวกับใน{place}",
+            f"หลายเดือนผ่านไป{name}ยังใช้ชีวิตตามปกติ แต่เลี่ยงเส้นทางนั้นทุกครั้ง เรื่องจึงเหมือนจบลงแล้ว จนคืนหนึ่งมีคนแปลกหน้าส่งภาพ{object_name}มาให้ พร้อมถามสั้น ๆ ว่าเขาจำทางออกจาก{place}ได้หรือไม่",
+        ]
+        return [
+            clean_story_line(f"{line} {expansions[index]}", seed)
+            for index, line in enumerate(lines)
+        ]
 
     if not seed.get("_curated"):
         return [clean_story_line(line, seed) for line in original_story_lines(seed, mode)]
@@ -1475,20 +1507,25 @@ def install_story_name_tuning(server):
 def install_make_story_tuning(server):
     def tuned_make_story(mode, brief, avoid=None):
         seed = server.make_seed(brief, avoid=avoid)
-        target_seconds = 148 if mode == "short" else 420
+        target_seconds = 148 if mode == "short" else 630
         if seed.get("_experience"):
             specs = experience_scene_specs(seed)
+            narrations = (
+                [spec["narration"] for spec in specs]
+                if mode == "short"
+                else server.story_lines(seed, mode)
+            )
             duration = max(6, round(target_seconds / len(specs)))
             scenes = [
                 {
                     "number": index,
                     "beat": "เสียงเล่าเรื่องต่อเนื่อง",
                     "duration": duration,
-                    "narration": clean_story_line(spec["narration"], seed),
+                    "narration": clean_story_line(narration, seed),
                     "visual": spec["visual"],
                     "imagePrompt": spec["imagePrompt"],
                 }
-                for index, spec in enumerate(specs, start=1)
+                for index, (spec, narration) in enumerate(zip(specs, narrations), start=1)
             ]
         else:
             lines = server.story_lines(seed, mode)
