@@ -2,13 +2,23 @@ name: Auto Horror YouTube Upload
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: Video mode to create
+        required: true
+        default: short
+        type: choice
+        options:
+          - short
+          - long
   push:
     branches:
       - main
     paths:
       - .github/run-now.txt
   schedule:
-    # GitHub cron uses UTC. 11:00 UTC is 18:00 in Asia/Bangkok.
+    # GitHub cron uses UTC: 10:00 is 17:00 and 11:00 is 18:00 in Bangkok.
+    - cron: "0 10 * * *"
     - cron: "0 11 * * *"
 
 concurrency:
@@ -18,7 +28,7 @@ concurrency:
 jobs:
   create-and-upload:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 360
 
     steps:
       - name: Check out repository
@@ -50,6 +60,9 @@ jobs:
 
       - name: Compute upload slot
         id: slot
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+          SCHEDULE_CRON: ${{ github.event.schedule }}
         run: |
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           from datetime import datetime, timezone, timedelta
@@ -59,11 +72,14 @@ jobs:
           if event_name != "schedule":
               print(f"slot_id=manual-{os.environ.get('GITHUB_RUN_ID', 'local')}")
               print("scheduled=false")
+              print(f"mode={os.environ.get('INPUT_MODE') or 'short'}")
               raise SystemExit
 
           bkk = datetime.now(timezone.utc) + timedelta(hours=7)
-          print(f"slot_id={bkk:%Y-%m-%d}-18")
+          mode = "long" if os.environ.get("SCHEDULE_CRON") == "0 10 * * *" else "short"
+          print(f"slot_id={bkk:%Y-%m-%d}-{mode}")
           print("scheduled=true")
+          print(f"mode={mode}")
           PY
 
       - name: Restore schedule slot lock
@@ -73,12 +89,12 @@ jobs:
           path: .schedule-slot-lock
           key: horror-autofilm-${{ steps.slot.outputs.slot_id }}
 
-      - name: Create and upload one horror short
+      - name: Create and upload one horror video
         if: steps.slot-lock.outputs.cache-hit != 'true'
         env:
           YOUTUBE_CLIENT_SECRETS_JSON: ${{ secrets.YOUTUBE_CLIENT_SECRETS_JSON }}
           YOUTUBE_TOKEN_JSON: ${{ secrets.YOUTUBE_TOKEN_JSON }}
-        run: python3 auto_worker.py --once --upload
+        run: python3 auto_worker.py --once --mode "${{ steps.slot.outputs.mode }}" --upload
 
       - name: Save recent story and visual history
         if: always() && hashFiles('.automation-history.json') != ''
